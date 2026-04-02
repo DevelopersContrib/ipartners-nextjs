@@ -1,8 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0A0F0D;
+  --background-secondary: #111916;
+  --background-card: #151D19;
+  --background-elevated: #1A2420;
+  --foreground: #E8F0EC;
+  --foreground-muted: #8B9E93;
+  --foreground-subtle: #5A6E62;
+  --primary: #22C55E;
+  --primary-dark: #16A34A;
+  --primary-darker: #15803D;
+  --primary-light: #4ADE80;
+  --primary-50: #0D2818;
+  --primary-glow: rgba(34, 197, 94, 0.15);
+  --accent: #10B981;
+  --border: #1E2D25;
+  --border-light: #2A3D32;
+  --success: #22C55E;
+  --warning: #EAB308;
+  --error: #EF4444;
 }
 
 @theme inline {
@@ -12,15 +29,132 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Base */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Hero gradients - iPartner dark green brand */
+.hero-gradient {
+  background: linear-gradient(135deg, #030A06 0%, #0A1F12 30%, #0D2818 65%, #15803D 100%);
+}
+
+.hero-gradient-green {
+  background: linear-gradient(135deg, #021A0B 0%, #064E3B 50%, #059669 100%);
+}
+
+.hero-gradient-purple {
+  background: linear-gradient(135deg, #0A0F0D 0%, #1A2420 30%, #1E3A2F 65%, #2D6A4F 100%);
+}
+
+.hero-gradient-orange {
+  background: linear-gradient(135deg, #0A0F0D 0%, #1C1210 50%, #78350F 100%);
+}
+
+/* Glass effect - dark */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Smooth card hover */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Animated gradient text - iPartner green */
+.gradient-text {
+  background: linear-gradient(135deg, #22C55E, #4ADE80, #10B981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Form focus styles */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+  border-color: var(--primary);
+}
+
+/* Iframe responsive */
+iframe {
+  max-width: 100%;
+}
+
+/* Pulse animation for CTAs */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Fade in animation */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-fade-in-up-delay-1 {
+  animation: fade-in-up 0.6s ease-out 0.15s forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up-delay-2 {
+  animation: fade-in-up 0.6s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+/* Glow border effect */
+.glow-border {
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.1), 0 0 20px -5px rgba(34, 197, 94, 0.1);
+}
+.glow-border:hover {
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3), 0 0 30px -5px rgba(34, 197, 94, 0.15);
+}
+
+/* Mobile touch target */
+@media (max-width: 768px) {
+  button, a, select, input {
+    min-height: 44px;
+  }
+}
+
+/* Custom scrollbar - dark */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2A3D32;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3D5A48;
 }

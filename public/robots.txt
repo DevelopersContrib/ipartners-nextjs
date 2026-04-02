@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ipartner.com/sitemap.xml
