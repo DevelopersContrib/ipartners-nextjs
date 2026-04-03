@@ -78,7 +78,7 @@ export default function Navigation() {
                 </Link>
               ))}
               <Link
-                href="/domain/apply"
+                href="/domain/apply#apply-form"
                 className="ml-3 bg-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-500 active:bg-green-700 transition-all shadow-md shadow-green-600/20 hover:shadow-lg hover:shadow-green-500/25"
               >
                 Apply Now
@@ -143,7 +143,7 @@ export default function Navigation() {
           </div>
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[#1E2D25] bg-[#111916]">
             <Link
-              href="/domain/apply"
+              href="/domain/apply#apply-form"
               className="flex items-center justify-center w-full bg-green-600 text-white py-3.5 rounded-xl text-base font-semibold hover:bg-green-500 transition-colors shadow-lg shadow-green-600/20"
               onClick={() => setMobileOpen(false)}
             >

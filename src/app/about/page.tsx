@@ -89,7 +89,7 @@ export default function AboutPage() {
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Ready to Join?</h2>
           <p className="text-lg text-[#5A6E62] mb-10 max-w-xl mx-auto">Whether you&apos;re an experienced professional or just starting out, iPartner has a partnership opportunity for you.</p>
-          <Link href="/domain/apply" className="inline-flex items-center justify-center bg-green-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-green-500 transition-all shadow-lg shadow-green-600/20">
+          <Link href="/domain/apply#apply-form" className="inline-flex items-center justify-center bg-green-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-green-500 transition-all shadow-lg shadow-green-600/20">
             Apply Now <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
           </Link>
         </div>

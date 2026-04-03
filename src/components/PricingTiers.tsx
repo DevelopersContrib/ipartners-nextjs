@@ -4,17 +4,17 @@ const tiers = [
   {
     name: 'Free', price: '$0', period: 'forever',
     features: ['Basic partnership access', 'Community membership', 'Standard support', 'Public profile listing'],
-    cta: 'Get Started Free', href: '/domain/apply', popular: false,
+    cta: 'Get Started Free', href: '/domain/apply#apply-form', popular: false,
   },
   {
     name: 'Standard', price: '$49', period: '/month',
     features: ['Everything in Free', 'Priority partnership matching', 'Advanced analytics dashboard', 'Premium email support', 'Custom branding options'],
-    cta: 'Start Standard', href: '/domain/apply?plan=standard', popular: true,
+    cta: 'Start Standard', href: '/domain/apply?plan=standard#apply-form', popular: true,
   },
   {
     name: 'Premium', price: '$149', period: '/month',
     features: ['Everything in Standard', 'Dedicated account manager', 'API access', 'White-label solutions', 'Revenue sharing program', 'Priority listing'],
-    cta: 'Go Premium', href: '/domain/apply?plan=premium', popular: false,
+    cta: 'Go Premium', href: '/domain/apply?plan=premium#apply-form', popular: false,
   },
 ];
 

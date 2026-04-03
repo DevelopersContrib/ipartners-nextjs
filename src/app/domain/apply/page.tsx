@@ -1,34 +1,26 @@
 import type { Metadata } from 'next';
-import ApplicationForm from '@/components/ApplicationForm';
+import ContribForm from '@/components/ContribForm';
 
 export const metadata: Metadata = {
   title: 'Apply for Domain Partnership - iPartner',
   description: 'Apply to become a domain partner with iPartner.',
 };
 
-interface PageProps {
-  searchParams: Promise<{ invitecode?: string; cappcode?: string; plan?: string }>;
-}
+const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'ipartner.com';
 
-export default async function DomainApplyPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const inviteCode = params.invitecode
-    ? Buffer.from(params.invitecode, 'base64').toString('utf-8')
-    : undefined;
-
+export default function DomainApplyPage() {
   return (
     <div className="py-16 px-4 bg-[#0D1210] min-h-screen">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Domain Partnership Application</h1>
-          <p className="text-[#5A6E62] mt-2">
-            Complete the form below to apply for a domain partnership.
+        <div className="text-center mb-10">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white">Domain Partnership Application</h1>
+          <p className="text-[#5A6E62] mt-3 max-w-lg mx-auto">
+            Complete the form below to apply for a domain partnership with iPartner.
           </p>
         </div>
-        <ApplicationForm
-          partnershipType="domain"
-          inviteCode={inviteCode}
-        />
+        <div id="apply-form" className="bg-[#111916] rounded-2xl border border-[#1E2D25] p-6 sm:p-8">
+          <ContribForm domain={DOMAIN} />
+        </div>
       </div>
     </div>
   );

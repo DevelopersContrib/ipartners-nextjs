@@ -17,7 +17,7 @@ export default function AppsPage() {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-full text-emerald-200 text-sm font-medium mb-8">Build & Ship Apps</div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">App Partnerships</h1>
           <p className="mt-6 text-lg sm:text-xl text-emerald-100/70 max-w-2xl mx-auto leading-relaxed">Collaborate on application development, distribution, and monetization with our partnership network.</p>
-          <div className="mt-10"><Link href="/apps/apply" className="inline-flex items-center justify-center bg-emerald-400 text-black px-8 py-4 rounded-xl text-lg font-bold hover:bg-emerald-300 transition-all shadow-lg">Apply Now <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg></Link></div>
+          <div className="mt-10"><Link href="/apps/apply#apply-form" className="inline-flex items-center justify-center bg-emerald-400 text-black px-8 py-4 rounded-xl text-lg font-bold hover:bg-emerald-300 transition-all shadow-lg">Apply Now <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg></Link></div>
         </div>
       </section>
       <section className="py-20 sm:py-24 px-4 bg-[#0D1210]">
@@ -31,7 +31,7 @@ export default function AppsPage() {
               </div>
             ))}
           </div>
-          <div className="mt-16 text-center"><Link href="/apps/apply" className="inline-flex items-center justify-center bg-emerald-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/20">Start Your App Partnership</Link></div>
+          <div className="mt-16 text-center"><Link href="/apps/apply#apply-form" className="inline-flex items-center justify-center bg-emerald-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/20">Start Your App Partnership</Link></div>
         </div>
       </section>
     </>
