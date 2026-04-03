@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /_next/
 
+# Sitemap
 Sitemap: https://ipartner.com/sitemap.xml
+
+# Agent Card
+# AI agents can discover capabilities at /.well-known/agent.json
