@@ -97,11 +97,17 @@ export async function checkVnocMemberExist(email: string): Promise<boolean> {
   return data?.data?.exists ?? false;
 }
 
-export async function getCountries(): Promise<Country[]> {
-  const data = await fetchJSON<{ data: Country[] }>(
+export async function getCountries(): Promise<unknown> {
+  const data = await fetchJSON<Record<string, unknown>>(
     `${IPARTNER_API}/Getcountry`
   );
-  return data?.data ?? [];
+  // API may return { data: [...] } or { data: { value: [...] } }
+  const inner = data?.data;
+  if (Array.isArray(inner)) return inner;
+  if (inner && typeof inner === 'object' && 'value' in (inner as Record<string, unknown>)) {
+    return (inner as Record<string, unknown>).value;
+  }
+  return inner ?? [];
 }
 
 export async function checkDomainExist(domain: string): Promise<boolean> {

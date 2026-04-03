@@ -20,9 +20,11 @@ export default function ContribForm({
         src={src}
         width="100%"
         height={height}
-        style={{ maxWidth: 800, border: 'none', background: '#f5f5f5' }}
+        className="rounded-xl"
+        style={{ maxWidth: 800, border: 'none', background: '#1A2420' }}
         title={type === 'contact' ? 'Contact Form' : 'Partnership Application'}
         loading="lazy"
+        allow="clipboard-write"
       />
     </div>
   );

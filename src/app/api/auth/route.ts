@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
 
     const user = await authenticateUser(email, password);
 
-    if (user) {
+    // API returns empty array [] for invalid users, or an object for valid ones
+    if (user && !Array.isArray(user) && typeof user === 'object' && Object.keys(user).length > 0) {
       return NextResponse.json({ success: true, user });
     }
 
