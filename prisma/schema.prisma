@@ -1,0 +1,18 @@
+// Prisma Schema for iPartners (contrib_rdb)
+//
+// To populate models from the live DB:
+//   pnpm prisma:pull      # introspect existing schema
+//   pnpm prisma:generate  # regenerate typed client
+//
+// For schema-first workflows:
+//   pnpm prisma:push      # push schema changes to DB (no migration history)
+//   pnpm prisma:migrate   # create and apply a migration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
