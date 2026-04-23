@@ -16,6 +16,7 @@
     "test-db": "tsx scripts/test-db.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.1035.0",
     "@prisma/client": "^6.19.0",
     "mysql2": "^3.22.2",
     "next": "16.2.2",

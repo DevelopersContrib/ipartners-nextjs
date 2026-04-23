@@ -1,13 +1,3 @@
-// Prisma Schema for iPartners (contrib_rdb)
-//
-// To populate models from the live DB:
-//   pnpm prisma:pull      # introspect existing schema
-//   pnpm prisma:generate  # regenerate typed client
-//
-// For schema-first workflows:
-//   pnpm prisma:push      # push schema changes to DB (no migration history)
-//   pnpm prisma:migrate   # create and apply a migration
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,4 +5,2401 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+model BadgeActivity {
+  activity_id Int     @id @default(autoincrement())
+  label       String? @db.VarChar(200)
+  class       String? @db.VarChar(100)
+  points      Int?
+}
+
+model BadgeMemberActivityPoints {
+  point_id               Int      @id @default(autoincrement())
+  member_id              Int
+  activity_id            Int
+  points                 Int
+  message                String?  @db.VarChar(250)
+  date_earned            DateTime @default(now()) @db.Timestamp(0)
+  domain                 String?  @db.VarChar(200)
+  referrence_id          String?  @db.VarChar(100)
+  is_active              Int?     @default(1)
+  blockchain_transaction String?  @db.VarChar(200)
+}
+
+model BadgeMemberPoints {
+  point_id    Int      @id @default(autoincrement())
+  member_id   Int
+  activity_id Int
+  points      Int
+  date_earned DateTime @default(now()) @db.Timestamp(0)
+  message     String?  @db.VarChar(250)
+  is_active   Int?     @default(1)
+}
+
+model BannedIpAddresses {
+  id     Int     @id @default(autoincrement())
+  ip_add String? @db.VarChar(200)
+}
+
+model Category {
+  category_id   Int     @id @default(autoincrement())
+  category_name String  @db.VarChar(200)
+  board_id      Int?    @default(0)
+  holding_url   String? @db.VarChar(100)
+  description   String? @db.Text
+  image         String? @db.VarChar(255)
+  map_color     String? @db.VarChar(100)
+}
+
+model ChallengeAttributes {
+  ChallengeAtrributeId Int      @id @default(autoincrement())
+  DomainId             Int?     @unique(map: "domain_id")
+  Introduction         String?  @db.Text
+  IntroTitle           String?  @db.VarChar(250)
+  ChallengeKey         Int?
+  CategoryId           Int?
+  TemplateColor        String?  @default("lightblue") @db.VarChar(100)
+  HeaderScript         String?  @db.Text
+  CustomHtml           String?  @db.Text
+  Desc_Graphics        String?  @db.VarChar(200)
+  UseSocialLogin       Boolean? @default(false)
+}
+
+model ChallengeBlockChain {
+  Id                  Int      @id @default(autoincrement())
+  ChallengeId         Int
+  blockhain_domain_id BigInt
+  prize_currency      String?  @default("ESH") @db.VarChar(20)
+  prize_amount        Float?   @default(0) @db.Float
+  DateUpdates         DateTime @default(now()) @db.Timestamp(0)
+}
+
+model ChallengeCategory {
+  ChallengeCategoryId Int    @id @default(autoincrement()) @db.UnsignedInt
+  CategoryName        String @db.VarChar(128)
+}
+
+model ChallengeDiscussion {
+  discussion_id Int       @id @default(autoincrement())
+  member_id     Int?
+  challenge_id  Int?
+  message       String?   @db.Text
+  date_posted   DateTime? @db.DateTime(0)
+}
+
+model ChallengeDomainsForTools {
+  Id           Int    @id @default(autoincrement())
+  Challenge_Id Int
+  DomainName   String @db.VarChar(150)
+}
+
+model ChallengeEshTransactions {
+  id                  Int      @id @default(autoincrement()) @db.UnsignedInt
+  transaction_id      String   @db.VarChar(250)
+  receiver_address    String   @db.VarChar(250)
+  receiver_domain     String   @db.VarChar(100)
+  from_address        String   @db.VarChar(250)
+  amount              Float    @db.Float
+  member_id           Int
+  challenge_id        Int
+  date_of_transaction DateTime @default(now()) @db.Timestamp(0)
+}
+
+model ChallengeLinks {
+  LinkId      Int     @id @default(autoincrement())
+  ChallengeId Int
+  Name        String  @db.VarChar(200)
+  Description String? @db.Text
+  Link        String  @db.VarChar(200)
+}
+
+model ChallengeMemberTypes {
+  id              Int                        @id @default(autoincrement())
+  member_id       Int
+  type            ChallengeMemberTypes_type? @default(challenger)
+  date_registered DateTime                   @default(now()) @db.Timestamp(0)
+}
+
+model ChallengeRequirementEntry {
+  EntryId     Int      @id @default(autoincrement())
+  ReqId       Int
+  Entry       String?  @db.Text
+  MemberId    BigInt
+  DateUpdated DateTime @default(now()) @db.Timestamp(0)
+}
+
+model ChallengeRequirementType {
+  TypeId Int    @id @default(autoincrement())
+  Name   String @db.VarChar(200)
+}
+
+model ChallengeRequirements {
+  ReqId       Int      @id @default(autoincrement())
+  ChallengeId Int
+  ReqType     Int
+  ReqLabel    String   @db.VarChar(200)
+  ReqChoices  String?  @db.Text
+  HasQuiz     Boolean? @default(false)
+  QuizId      Int?     @default(0)
+}
+
+model ChallengeSponsor {
+  SponsorshipId   Int                               @id @default(autoincrement())
+  ChallengeId     Int
+  SponsorshipType ChallengeSponsor_SponsorshipType?
+  SponsorId       Int
+  Message         String?                           @db.Text
+  Amount          String?                           @db.VarChar(255)
+  DateSubmitted   DateTime?                         @db.DateTime(0)
+  SponsorImage    String?                           @db.VarChar(255)
+  SponsorURL      String?                           @db.VarChar(255)
+  Approved        ChallengeSponsor_Approved?        @default(dbgenerated("0"))
+  EquityPoints    String?                           @db.VarChar(100)
+  Details         String?                           @db.Text
+  SponsorTitle    String?                           @db.VarChar(200)
+  service         String?                           @db.Text
+  payment_id      Int?
+  transaction_id  String?                           @db.VarChar(250)
+}
+
+model ChallengeSponsorhipTypes {
+  id       Int     @id @default(autoincrement())
+  name     String? @db.VarChar(100)
+  val_name String? @db.VarChar(100)
+}
+
+model ChallengeSponsorhipTypesList {
+  id           Int  @id @default(autoincrement())
+  Challenge_Id Int
+  type_id      Int?
+}
+
+model ChallengeSponsorshipPayments {
+  payment_id       BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  member_id        Int
+  ChallengeId      Int
+  datetime_created DateTime @default(now()) @db.Timestamp(0)
+  transaction_id   String?  @db.Text
+  token            String?  @db.Text
+  amount           Float?   @db.Float
+  currency         String?  @db.VarChar(3)
+  status           String?  @db.Text
+  firstname        String?  @db.Text
+  lastname         String?  @db.Text
+  email            String?  @db.Text
+  description      String?  @db.Text
+  summary          String?  @db.Text
+}
+
+model ChallengeTokenPrice {
+  id          Int     @id @default(autoincrement()) @db.UnsignedInt
+  ChallengeId Int
+  token       String? @db.VarChar(255)
+  currency    String? @db.VarChar(100)
+  amount      Float?
+  chainId     Int?    @default(4)
+}
+
+model Challenge_AppFiles {
+  FileId   Int    @id @default(autoincrement())
+  AppId    Int
+  FilePath String @db.VarChar(100)
+}
+
+model Challenge_AppImages {
+  ImageId   Int    @id @default(autoincrement())
+  AppId     Int
+  ImagePath String @db.VarChar(225)
+}
+
+model Challenge_AppVideo {
+  VideoId Int    @id @default(autoincrement())
+  AppId   Int
+  Url     String @db.Text
+}
+
+model Challenge_Criteria {
+  CriteriaId          Int    @id @default(autoincrement())
+  ChallengeId         Int
+  CriteriaDescription String @db.MediumText
+}
+
+model Challenge_HowToEnter {
+  HowToId     Int    @id @default(autoincrement())
+  ChallengeId Int
+  HowToDesc   String @db.MediumText
+}
+
+model Challenge_Prizes {
+  PrizeId          Int    @id @default(autoincrement())
+  ChallengeId      Int
+  PrizeDescription String @db.MediumText
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model Challenge_Solution {
+  ChallengeSolution Int                        @id @default(autoincrement()) @db.UnsignedInt
+  Solution          String                     @db.Text
+  SolutionTitle     String?                    @db.VarChar(50)
+  Attachment        String?                    @db.VarChar(100)
+  DatePosted        DateTime                   @db.DateTime(0)
+  ChallengeId       Int                        @db.UnsignedInt
+  ChallengeMemberId Int                        @db.UnsignedInt
+  Approve           Challenge_Solution_Approve @default(dbgenerated("0"))
+  in_equity         Int?                       @default(0)
+  wallet_address    String?                    @db.VarChar(255)
+  transaction_id    String?                    @db.VarChar(255)
+  chainId           Int?                       @default(4) @db.TinyInt
+}
+
+model Challenge_Timeline {
+  TimelineId        Int      @id @default(autoincrement())
+  ChallengeId       Int
+  Submission_From   DateTime @db.Date
+  Submission_To     DateTime @db.Date
+  Judging_From      DateTime @db.Date
+  Judging_To        DateTime @db.Date
+  Winners_Announced DateTime @db.Date
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model Challenges {
+  ChallengeId       Int                        @id @default(autoincrement()) @db.UnsignedInt
+  ChallengeTitle    String                     @db.VarChar(200)
+  ChallengeDesc     String                     @db.Text
+  MoreDetails       String                     @db.Text
+  Photo             String                     @db.VarChar(150)
+  CategoryId        Int
+  DatePosted        DateTime                   @db.DateTime(0)
+  Solved            Challenges_Solved          @default(dbgenerated("0"))
+  URLName           String                     @db.VarChar(20)
+  Approved          Challenges_Approved        @default(dbgenerated("0"))
+  Slug              String?                    @db.VarChar(200)
+  short_desc        String                     @db.VarChar(1000)
+  font_style        String                     @db.VarChar(50)
+  font_size         Int
+  bg_color          String                     @db.VarChar(50)
+  EquityPoints      Int?                       @default(0)
+  is_featured       Challenges_is_featured?    @default(dbgenerated("0"))
+  is_onboarding     Int?                       @default(0)
+  contribution_type Int?                       @default(1)
+  ParentId          Int?                       @default(0)
+  HashTag           String?                    @db.VarChar(200)
+  CashPrize         Float?                     @default(0) @db.Float
+  DaysRequired      Int?                       @default(0)
+  enable_quiz       Int?                       @default(0)
+  challenge_type    Challenges_challenge_type? @default(onboarding)
+  MemberId          Int?
+  FromDomain        String?                    @db.VarChar(200)
+  IsApproved        Boolean?                   @default(true)
+}
+
+model Challenges_Featured {
+  id          Int @id @default(autoincrement())
+  ChallengeId Int
+}
+
+model ChatMessages {
+  msg_id       BigInt   @id @default(autoincrement())
+  member_id    Int
+  message      String?  @db.Text
+  read         Boolean? @default(false)
+  date_sent    DateTime @default(now()) @db.Timestamp(0)
+  room         String?  @default("0") @db.VarChar(200)
+  mtimestamp   String?  @db.VarChar(200)
+  domain       String?  @default("contrib.com") @db.VarChar(100)
+  user_session String?  @db.VarChar(200)
+  guest_email  String?  @db.VarChar(200)
+}
+
+model ChatSettings {
+  sid                  Int     @id @default(autoincrement())
+  domain               String  @db.VarChar(200)
+  logo_url             String? @db.VarChar(200)
+  login_form_intro     String? @db.Text
+  theme                String? @default("gray") @db.VarChar(100)
+  slack_channel        String? @db.VarChar(100)
+  slack_key            String? @db.VarChar(200)
+  representive_welcome String? @db.Text
+  representive         Int?    @default(1038)
+}
+
+model CommunityChannels {
+  id           Int      @id @default(autoincrement())
+  team_id      Int
+  channel_name String?  @db.VarChar(250)
+  date_created DateTime @default(now()) @db.Timestamp(0)
+  description  String?  @db.Text
+  member_id    Int?     @default(19)
+  slug         String?  @db.VarChar(100)
+  is_direct    Boolean? @default(false)
+}
+
+model CommunityDirectMessages {
+  id         BigInt   @id @default(autoincrement())
+  from_id    Int
+  to_id      Int
+  channel_id String   @db.VarChar(100)
+  message    String   @db.Text
+  is_read    Boolean? @default(false)
+  date_sent  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model CommunityMembers {
+  id          Int      @id @default(autoincrement())
+  member_id   Int
+  channel_id  Int
+  date_joined DateTime @default(now()) @db.Timestamp(0)
+}
+
+model CommunityMessages {
+  id         BigInt   @id @default(autoincrement())
+  member_id  Int
+  channel_id Int
+  message    String   @db.Text
+  is_read    Boolean? @default(false)
+  is_guest   Boolean? @default(false)
+  date_sent  DateTime @default(now()) @db.Timestamp(0)
+  mtimestamp String?  @db.VarChar(200)
+}
+
+model CommunityMessagesRead {
+  id        Int      @id @default(autoincrement())
+  member_id Int
+  msg_id    Int
+  date_read DateTime @default(now()) @db.Timestamp(0)
+}
+
+model CommunityRss {
+  id         BigInt   @id @default(autoincrement())
+  channel_id Int
+  rss_name   String?  @db.VarChar(250)
+  rss_url    String?  @db.VarChar(250)
+  enabled    Boolean? @default(false)
+  date_added DateTime @default(now()) @db.Timestamp(0)
+}
+
+model CommunityRssPosts {
+  post_id     BigInt    @id @default(autoincrement())
+  rss_id      BigInt
+  channel_id  Int
+  title       String?   @db.VarChar(250)
+  content     String?   @db.Text
+  url         String?   @db.VarChar(250)
+  posted      Boolean?  @default(false)
+  published   String?   @db.VarChar(200)
+  date_posted DateTime? @db.DateTime(0)
+}
+
+model CommunityTeam {
+  id           Int      @id @default(autoincrement())
+  name         String?  @db.VarChar(250)
+  date_created DateTime @default(now()) @db.Timestamp(0)
+}
+
+model ConsultantsAttributes {
+  AttributeId  Int    @id @default(autoincrement())
+  DomainId     Int    @unique(map: "DomainId")
+  Introduction String @db.TinyText
+  IndustryIds  String @db.VarChar(255)
+}
+
+model ContributionType {
+  contribution_type_id   Int     @id @default(autoincrement())
+  contribution_type_name String? @db.VarChar(255)
+}
+
+model Country {
+  country_id BigInt   @id
+  name       String   @unique(map: "country_name") @db.VarChar(200)
+  code       String?  @db.VarChar(100)
+  phone_code String?  @db.VarChar(100)
+  active     Boolean? @default(false)
+  map_color  String?  @db.VarChar(100)
+}
+
+model CountryCity {
+  id      Int    @id @default(autoincrement())
+  country String @db.VarChar(255)
+  city    String @db.VarChar(255)
+  rank    Int
+
+  @@unique([country, city], map: "country_city")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Country_City {
+  country String @db.VarChar(255)
+  city    String @db.VarChar(255)
+  rank    Int
+
+  @@ignore
+}
+
+model CpanelDomain {
+  CpanelId Int     @id @default(autoincrement())
+  DomainId Int?    @unique(map: "domain_id")
+  Username String? @db.VarChar(200)
+  Password String? @db.VarChar(200)
+  ServerId Int?
+}
+
+model CustomContributionFiles {
+  file_id         Int      @id @default(autoincrement())
+  title           String?  @db.VarChar(250)
+  url             String?  @db.VarChar(250)
+  contribution_id Int
+  member_id       Int
+  filename        String?  @db.VarChar(200)
+  date_uploaded   DateTime @default(now()) @db.Timestamp(0)
+  from_google     Int?     @default(0)
+}
+
+model CustomContributionUpdates {
+  update_id       Int                                    @id @default(autoincrement())
+  contribution_id Int
+  message         String                                 @db.Text
+  member_id       Int
+  posted_from     CustomContributionUpdates_posted_from? @default(contrib)
+  date_created    DateTime                               @default(now()) @db.Timestamp(0)
+  Unread          Int                                    @default(1)
+}
+
+model CustomContributions {
+  c_id              Int      @id @default(autoincrement())
+  member_id         Int
+  contribution_type Int
+  domain            String   @db.VarChar(200)
+  title             String   @db.VarChar(250)
+  description       String?  @db.Text
+  worth             Float?   @default(0) @db.Float
+  date_contributed  DateTime @default(now()) @db.Timestamp(0)
+  status_id         Int?     @default(1)
+  worth_type        Int?     @default(1)
+  venture_id        Int?
+  task_status       Int?     @default(1)
+  task_id           Int?
+  to_date           String?  @db.VarChar(20)
+  from_date         String?  @db.VarChar(20)
+  sent_message      Boolean? @default(false)
+  wallet_address    String?  @db.VarChar(255)
+  token_address     String?  @db.VarChar(200)
+  token_currency    String?  @db.VarChar(100)
+  transaction_id    String?  @db.VarChar(255)
+  chainId           Boolean?
+}
+
+model CustomCounterOffers {
+  offer_id        Int                         @id @default(autoincrement())
+  contribution_id Int
+  counter_worth   Float?                      @default(0) @db.Float
+  counter_type    Int?
+  date_sent       DateTime                    @default(now()) @db.Timestamp(0)
+  date_updated    DateTime?                   @db.DateTime(0)
+  status          CustomCounterOffers_status? @default(new)
+  offered_by      Int
+}
+
+model CustomTaskPaymentDetails {
+  payment_id      Int     @id @default(autoincrement())
+  c_id            Int?
+  sender_id       Int?
+  sender_name     String? @db.VarChar(250)
+  amount          Float?  @db.Float
+  date_sent       String? @db.VarChar(20)
+  mode_of_payment String? @db.VarChar(250)
+  notes           String? @db.Text
+}
+
+model CustomTaskStatus {
+  status_id Int    @id @default(autoincrement())
+  status    String @db.VarChar(100)
+}
+
+model CustomWorthType {
+  type_id Int    @id @default(autoincrement())
+  name    String @db.VarChar(100)
+}
+
+model CustomWorthTypeStatus {
+  status_id Int    @id @default(autoincrement())
+  status    String @db.VarChar(100)
+}
+
+model DashboardQuestions {
+  Id       Int     @id @default(autoincrement())
+  Question String? @db.Text
+  Link     String? @db.VarChar(100)
+}
+
+model DashboardTypes {
+  dashboard_id Int     @id @default(autoincrement())
+  name         String  @db.VarChar(100)
+  template     String? @db.VarChar(100)
+}
+
+model DashboardUserWidgets {
+  member_id    Int    @id
+  widget_order String @db.VarChar(250)
+}
+
+model DashboardWidgets {
+  widget_id          Int     @id @default(autoincrement())
+  widget_name        String  @db.VarChar(200)
+  widget_view        String  @db.VarChar(200)
+  widget_description String? @db.VarChar(255)
+}
+
+model Discussion_Comment_Votes {
+  vote_id    Int  @id @default(autoincrement())
+  comment_id Int?
+  member_id  Int?
+}
+
+model Discussion_Comments {
+  comment_id  Int       @id @default(autoincrement())
+  topic_id    Int?
+  content     String?   @db.Text
+  member_id   Int?
+  date_posted DateTime? @db.DateTime(0)
+  is_best     Int?
+}
+
+model Discussion_Tags {
+  tag_id        Int     @id @default(autoincrement())
+  tag           String  @db.VarChar(255)
+  discussion_id String? @db.VarChar(255)
+}
+
+model Discussion_Topics {
+  topic_id    Int       @id @default(autoincrement())
+  title       String?   @db.VarChar(200)
+  details     String?   @db.Text
+  member_id   Int?
+  category_id Int?
+  date_posted DateTime? @db.DateTime(0)
+  sticky      Int
+}
+
+model Discussion_Views {
+  view_id     Int       @id @default(autoincrement())
+  topic_id    Int?
+  member_id   Int?
+  date_viewed DateTime? @db.DateTime(0)
+}
+
+model Discussion_Votes {
+  vote_id   Int  @id @default(autoincrement())
+  topic_id  Int?
+  member_id Int?
+}
+
+model DomainAds {
+  ads_id        Int             @id @default(autoincrement())
+  title         String?         @db.VarChar(200)
+  contact_name  String?         @db.VarChar(200)
+  contact_email String?         @db.VarChar(200)
+  domain        String          @db.VarChar(100)
+  type          DomainAds_type?
+  image_url     String?         @db.VarChar(200)
+  image_file    String?         @db.VarChar(200)
+  text_ads      String?         @db.VarChar(220)
+  url           String?         @db.VarChar(200)
+  is_paid       Boolean?        @default(false)
+  date_paid     DateTime?       @db.DateTime(0)
+}
+
+model DomainBuildRequest {
+  ReqId         Int      @id @default(autoincrement())
+  DomainName    String   @db.VarChar(200)
+  FrameworkId   Int
+  ServerId      Int
+  RequestedBy   Int
+  DateRequested DateTime @db.DateTime(0)
+  BuilderId     Int?
+}
+
+model DomainBuilderSettings {
+  id           Int      @id @default(autoincrement())
+  domain       String   @unique(map: "domain_") @db.VarChar(255)
+  path         String   @db.VarChar(255)
+  title        String?  @db.VarChar(100)
+  attributes   String?  @db.Text
+  is_child     Boolean? @default(false)
+  parent       String?  @db.VarChar(100)
+  date_updated DateTime @default(now()) @db.Timestamp(0)
+}
+
+model DomainDailyLogs {
+  DomainDailyLogId BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  DomainId         BigInt   @db.UnsignedBigInt
+  MemberId         Int?
+  LogDate          DateTime @db.Date
+  Landings         BigInt
+  PageViews        BigInt
+  Revenue          Decimal  @db.Decimal(8, 2)
+  Conversions      BigInt
+
+  @@index([DomainId], map: "FK_DomainDailyLogs_Domains")
+}
+
+model DomainFollowers {
+  f_id          Int       @id @default(autoincrement())
+  member_id     Int?
+  domain        String?   @db.VarChar(100)
+  date_followed DateTime? @db.DateTime(0)
+
+  @@unique([member_id, domain], map: "domain_member")
+}
+
+model DomainHistory {
+  Id              Int       @id @default(autoincrement())
+  MemberId        Int?
+  DomainId        Int?
+  Process         String?   @db.VarChar(100)
+  DateDone        DateTime? @db.DateTime(0)
+  Message         String?   @db.Text
+  FromFrameworkId Int?
+  ToFrameworkId   Int?
+  DomainName      String?   @db.VarChar(100)
+}
+
+model DomainMonthlyLogs {
+  DomainMonthlyLogId BigInt  @id @default(autoincrement()) @db.UnsignedBigInt
+  DomainId           BigInt  @db.UnsignedBigInt
+  LogYear            Int     @db.SmallInt
+  LogMonth           Int     @db.TinyInt
+  Landings           BigInt  @default(0)
+  PageViews          BigInt  @default(0)
+  Revenue            Decimal @default(0.00) @db.Decimal(8, 2)
+  Conversions        BigInt
+  MemberId           Int?
+
+  @@unique([DomainId, LogYear, LogMonth], map: "UIX_DomainMonthlyLogs_Domain_x_LogYear_x_LogMonth")
+  @@index([DomainId], map: "FK_DomainMonthlyLogs_Domains")
+  @@index([LogYear, LogMonth], map: "IX_DomainMonthlyLogs_LogYear_LogMonth")
+}
+
+model DomainServerHistory {
+  Id         Int      @id @default(autoincrement())
+  MemberId   Int?
+  DomainId   Int?
+  Process    String?  @db.VarChar(100)
+  DateDone   DateTime @default(now()) @db.Timestamp(0)
+  Message    String?  @db.Text
+  DomainName String?  @db.VarChar(100)
+}
+
+model DomainSessionPageViews {
+  DomainSessionPageViewId BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  DomainSessionId         BigInt   @db.UnsignedBigInt
+  ViewDate                DateTime @default(now()) @db.Timestamp(0)
+  Page                    String   @db.VarChar(2047)
+
+  @@index([DomainSessionId], map: "FK_DomainSessionPageViews_DomainSessions")
+}
+
+model DomainSessions {
+  DomainSessionId    BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  DomainId           BigInt   @db.UnsignedBigInt
+  CreatedDate        DateTime @default(now()) @db.Timestamp(0)
+  LastClickTimestamp DateTime @db.DateTime(0)
+  SessionTag         String   @db.VarChar(255)
+  LandingPage        String   @db.VarChar(2047)
+  IPAddress          String   @db.VarChar(63)
+  PreviousUrl        String   @db.VarChar(2047)
+  Browser            String   @db.VarChar(1023)
+  SearchTerm         String?  @db.VarChar(2047)
+
+  @@index([DomainId], map: "FK_DomainSessions_Domains")
+  @@index([SessionTag], map: "IX_DomainSessions_SessionTag")
+}
+
+model DomainTags {
+  DomainTagId BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  DomainId    BigInt @db.UnsignedBigInt
+  TagId       BigInt @db.UnsignedBigInt
+
+  @@index([DomainId], map: "FK_DomainTags_Domains")
+  @@index([TagId], map: "FK_DomainTags_Tags")
+}
+
+model DomainWeeklyLogs {
+  DomainWeeklyLogId BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  DomainId          BigInt @db.UnsignedBigInt
+  MemberId          Int?
+  LogYear           Int    @db.SmallInt
+  LogWeek           Int    @db.TinyInt
+  Landings          BigInt @default(0)
+  PageViews         BigInt @default(0)
+  Revenue           BigInt @default(0)
+  Conversions       BigInt
+
+  @@unique([DomainId, LogYear, LogWeek], map: "UIX_DomainWeeklyLogs_DomainId_x_LogYear_x_LogWeek")
+  @@index([DomainId], map: "FK_DomainWeeklyLogs_Domains")
+  @@index([LogYear, LogWeek], map: "IX_DomainWeeklyLogs_LogYear_x_LogWeek")
+}
+
+model Domains {
+  DomainId              BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  MemberId              BigInt             @db.UnsignedBigInt
+  DomainName            String?            @unique(map: "UIX_Domains_DomainName") @db.VarChar(255)
+  CanonicalizeWWW       Boolean
+  FrameworkTypeId       Int                @db.UnsignedInt
+  TargetFrameworkTypeId Int?
+  Title                 String?            @db.VarChar(255)
+  Keywords              String?            @db.VarChar(1024)
+  Tagline               String?            @db.VarChar(1024)
+  HeaderContent         String?            @db.Text
+  TrackerContent        String?            @db.Text
+  Logo                  String?            @db.VarChar(255)
+  AddedDate             DateTime           @default(now()) @db.Timestamp(0)
+  TotalVisitors         BigInt             @default(0)
+  TotalRevenue          Decimal            @default(0.00) @db.Decimal(10, 2)
+  FrameworkServiceId    Int?               @db.UnsignedInt
+  IsActive              Boolean            @default(false)
+  AllowInquiries        Int
+  AccountGA             String             @db.VarChar(15)
+  Description           String             @db.Text
+  DomainType            Domains_DomainType @default(domain)
+  ToUpdate              Boolean?           @default(false)
+  VnocDomainId          BigInt?            @default(0)
+  cloudflare_identifier String?            @db.VarChar(250)
+  vercel_identifier     String?            @db.VarChar(200)
+
+  @@index([FrameworkServiceId], map: "FK_Domains_FrameworkServices")
+  @@index([FrameworkTypeId], map: "FK_Domains_FrameworkTypes")
+  @@index([MemberId], map: "FK_Domains_Members")
+}
+
+model Event {
+  event_id       Int               @id @default(autoincrement())
+  date_added     DateTime?         @db.DateTime(0)
+  added_by_email String            @db.VarChar(50)
+  title          String            @db.VarChar(255)
+  description    String?           @db.Text
+  timezone       String?           @db.VarChar(100)
+  event_date     DateTime?         @db.DateTime(0)
+  event_time     String?           @db.VarChar(50)
+  city_location  String?           @db.VarChar(50)
+  image          String?           @db.VarChar(255)
+  is_private     Event_is_private? @default(dbgenerated("0"))
+  is_paid        Event_is_paid?    @default(dbgenerated("0"))
+}
+
+model EventAttachment {
+  attachment_id Int    @id @default(autoincrement())
+  url           String @db.VarChar(255)
+  event_id      Int
+  link_type_id  Int?   @default(6)
+}
+
+model EventBrand {
+  event_brand_id Int    @id @default(autoincrement())
+  domain         String @db.VarChar(50)
+  event_id       Int
+}
+
+model EventFavorite {
+  event_favorite_id Int       @id @default(autoincrement())
+  member_id         Int
+  event_id          Int
+  date_favorited    DateTime? @db.DateTime(0)
+}
+
+model EventLinkTypes {
+  link_type_id Int    @id @default(autoincrement())
+  link_type    String @db.VarChar(50)
+}
+
+model EventParticipants {
+  event_participant_id Int       @id @default(autoincrement())
+  member_id            Int
+  event_id             Int
+  date_joined          DateTime? @db.DateTime(0)
+}
+
+model EventPartner {
+  event_partner_id Int @id @default(autoincrement())
+  partner_id       Int
+  event_id         Int
+}
+
+model Events {
+  event_id   Int     @id @default(autoincrement())
+  event_name String? @db.VarChar(200)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model ExcemptedDomains {
+  id         Int    @id @default(autoincrement())
+  DomainName String @db.VarChar(100)
+}
+
+model ExperienceSkills {
+  skill_id   Int     @id @default(autoincrement())
+  experience String? @db.VarChar(200)
+}
+
+model FollowAttributes {
+  AttributeId     Int     @id @default(autoincrement())
+  DomainId        Int?    @unique(map: "domain_id")
+  Introduction    String? @db.Text
+  BackgroundImage String? @db.VarChar(200)
+  About           String? @db.Text
+}
+
+model FollowFrameworkVer2 {
+  AttributeId     Int     @id @default(autoincrement())
+  DomainId        Int?
+  Introduction    String? @db.Text
+  BackgroundImage String? @db.VarChar(200)
+  About           String? @db.Text
+}
+
+model ForSaleAttribute {
+  AttributeId        Int     @id @default(autoincrement())
+  DomainId           Int
+  ForSaleDescription String? @db.Text
+  BackgroundType     String? @db.VarChar(20)
+  BackgroundColor    String? @db.VarChar(20)
+  BackgroundImage    String? @db.VarChar(200)
+  BottomText         String? @db.Text
+  ImageStyle         String? @db.VarChar(100)
+}
+
+model ForumAttribute {
+  ForumAttributeId Int     @id @default(autoincrement())
+  DomainId         Int
+  Style            String? @default("Air") @db.VarChar(100)
+  AdminEmail       String  @default("kjabellar@gmail.com") @db.VarChar(100)
+
+  @@index([DomainId], map: "domain_id")
+}
+
+model FrameworkAttributeType {
+  TypeId Int    @id @default(autoincrement())
+  Name   String @db.VarChar(200)
+}
+
+model FrameworkAttributeValues {
+  ValueId     BigInt    @id @default(autoincrement())
+  FieldValue  String?   @db.Text
+  AttributeId Int
+  DomainId    BigInt
+  DateUpdated DateTime? @db.DateTime(0)
+}
+
+model FrameworkAttributes {
+  AttributeId     Int      @id @default(autoincrement())
+  AttributeName   String   @db.VarChar(200)
+  AttributeLabel  String   @db.VarChar(200)
+  Choices         String?  @db.Text
+  FieldTypeId     Int
+  FrameworkTypeId Int
+  Required        Boolean? @default(false)
+  DefaultValue    String?  @db.Text
+  Hide            Boolean? @default(false)
+
+  @@unique([AttributeName, FrameworkTypeId], map: "framework_fieldname")
+}
+
+model FrameworkMultipleAttributeValues {
+  ValueId     BigInt    @id @default(autoincrement())
+  FieldValue  String?   @db.Text
+  AttributeId Int
+  DomainId    BigInt
+  DateUpdated DateTime? @db.DateTime(0)
+}
+
+model FrameworkMultipleAttributes {
+  AttributeId     Int      @id @default(autoincrement())
+  AttributeName   String   @db.VarChar(200)
+  AttributeLabel  String   @db.VarChar(200)
+  MainFieldId     Int
+  Choices         String?  @db.Text
+  FieldTypeId     Int
+  FrameworkTypeId Int
+  Required        Boolean? @default(false)
+  DefaultValue    String?  @db.Text
+  Hide            Boolean? @default(false)
+
+  @@unique([AttributeName, FrameworkTypeId], map: "framework_fieldname")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model FrameworkServices {
+  FrameworkServiceId Int                       @id @default(autoincrement()) @db.UnsignedInt
+  FrameworkTypeId    Int                       @db.UnsignedInt
+  CNameOrIP          String                    @db.VarChar(255)
+  DNSType            FrameworkServices_DNSType
+  LastAssignedDate   DateTime                  @db.DateTime(0)
+  IsCurrent          Boolean
+  IsActive           Boolean
+
+  @@index([FrameworkTypeId], map: "FK_FrameworkServices_FrameworkTypes")
+}
+
+model FrameworkTypes {
+  FrameworkTypeId Int      @id @default(autoincrement()) @db.UnsignedInt
+  FrameworkName   String   @db.VarChar(63)
+  IsActive        Boolean  @default(false)
+  AllowInquiries  Int
+  FolderName      String   @db.VarChar(255)
+  Description     String?  @db.Text
+  Preview_Image   String?  @db.VarChar(200)
+  Vnoc_Id         Int?
+  IsExternal      Int?     @default(0) @db.TinyInt
+  CanBulk         Boolean? @default(false)
+  ZipFile         String?  @db.VarChar(255)
+  ConfigPath      String?  @db.VarChar(200)
+  BuildPreview    String?  @db.VarChar(200)
+  Rate            Float?   @default(0) @db.Float
+  RepoLink        String?  @db.VarChar(255)
+  Icon            String?  @db.VarChar(255)
+  is_generic      Int?     @default(0)
+  default_server  Int?     @default(0)
+  is_react        Boolean? @default(false)
+
+  @@fulltext([FrameworkName, Description], map: "FrameworkName")
+}
+
+model FrameworkUpdate {
+  UpdateId    Int       @id @default(autoincrement())
+  FrameworkId Int?
+  DateAdded   DateTime? @db.DateTime(0)
+  ByFiles     Boolean?  @default(false)
+  Files       String?   @db.Text
+}
+
+model FundLeadsAttributes {
+  ArttributeId     Int     @id @default(autoincrement())
+  DomainId         Int     @unique(map: "DomainId")
+  FacebookPage     String? @db.VarChar(255)
+  TwitterPage      String? @db.VarChar(100)
+  Meta_Description String? @db.TinyText
+  Meta_Keywords    String? @db.VarChar(255)
+}
+
+model IPartner {
+  ipartner_id        Int       @id @default(autoincrement())
+  firstname          String?   @db.VarChar(25)
+  lastname           String?   @db.VarChar(25)
+  email              String    @db.VarChar(50)
+  phone              String?   @db.VarChar(25)
+  linkedin           String?   @db.VarChar(100)
+  employer           String?   @db.VarChar(100)
+  location           String?   @db.VarChar(255)
+  domain_name        String    @db.VarChar(50)
+  industry           String?   @db.VarChar(50)
+  time_commitment    String?   @db.VarChar(25)
+  areas_of_expertise String?   @db.Text
+  concept_ideas      String?   @db.Text
+  resources          String?   @db.Text
+  partnership_goals  String?   @db.Text
+  business_advice    String?   @db.Text
+  resources_needed   String?   @db.Text
+  expectations       String?   @db.Text
+  date_submitted     DateTime? @db.DateTime(0)
+  status             Boolean?  @default(false)
+  in_blog            Boolean?  @default(false)
+}
+
+model Industry {
+  IndustryId Int     @id
+  Name       String? @db.VarChar(100)
+  Slug       String? @db.VarChar(100)
+  map_color  String? @db.VarChar(100)
+}
+
+model JobApplications {
+  job_application_id Int       @id @default(autoincrement())
+  domain_name        String?   @db.VarChar(255)
+  job_vnoc_id        Int?
+  applicant_id       Int?
+  approved_status    String?   @db.VarChar(60)
+  date_applied       DateTime? @db.DateTime(0)
+  applicant_message  String?   @db.Text
+  resume_url         String?   @db.VarChar(255)
+  resume_filename    String?   @db.VarChar(50)
+}
+
+model LeadVer3Attributes {
+  AttributeId     Int     @id @default(autoincrement())
+  DomainId        Int     @unique(map: "DomainId")
+  BackgroundType  String? @db.VarChar(50)
+  BackgroundColor String? @db.VarChar(50)
+  BackgroundImage String? @db.VarChar(200)
+  ImageStyle      String? @db.VarChar(50)
+}
+
+model LeadVer4Attributes {
+  AttributeId     Int     @id @default(autoincrement())
+  DomainId        Int     @unique(map: "DomainId")
+  BackgroundType  String? @db.VarChar(50)
+  BackgroundColor String? @db.VarChar(50)
+  BackgroundImage String? @db.VarChar(200)
+  ImageStyle      String? @db.VarChar(50)
+}
+
+model LeadsAttributes {
+  AttributeId     Int     @id @default(autoincrement())
+  DomainId        Int?    @unique(map: "domain_id")
+  BackgroundType  String? @db.VarChar(100)
+  BackgroundColor String? @db.VarChar(100)
+  BackgroundImage String? @db.VarChar(200)
+  FbPage          String? @db.VarChar(200)
+  Twitter         String? @db.VarChar(200)
+  TopDescription  String? @db.Text
+  BottomText      String? @db.Text
+  ImageStyle      String? @db.VarChar(200)
+}
+
+model LegalDocuments {
+  document_id Int                       @id @default(autoincrement())
+  description String?                   @db.Text
+  url         String?                   @db.VarChar(200)
+  filename    String?                   @db.VarChar(200)
+  form_type   LegalDocuments_form_type? @default(dynamic)
+}
+
+model LikePage {
+  like_id Int  @id @default(autoincrement())
+  user_id Int?
+}
+
+model LinkRatings {
+  id          Int      @id @default(autoincrement())
+  url         String?  @db.VarChar(255)
+  total_votes Int?     @default(0)
+  total_value Int?     @default(0)
+  used_ips    String?  @db.LongText
+  date        DateTime @default(now()) @db.Timestamp(0)
+  domain      String?  @db.VarChar(100)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model MarketApplications {
+  application_id    Int       @id @default(autoincrement())
+  summary           String?   @db.Text
+  date_applied      DateTime? @db.DateTime(0)
+  domain            String    @db.VarChar(100)
+  member_id         Int
+  approved          Boolean?  @default(false)
+  approved_by       Int
+  approved_status   String?   @db.VarChar(100)
+  role_id           Int
+  resume            String?   @db.VarChar(100)
+  resume_url        String?   @db.VarChar(255)
+  contrib_outsource Boolean   @default(false)
+  added_by          Int?
+  answered_quiz     Boolean?  @default(false)
+  approved_date     DateTime? @db.DateTime(0)
+  sent_quiz         Boolean?  @default(false)
+
+  @@unique([domain, member_id], map: "domain_member")
+  @@index([member_id], map: "fk_MarketApplications_Members1_idx")
+  @@index([approved_by], map: "fk_MarketApplications_Members2_idx")
+  @@index([role_id], map: "fk_MemberApplications_MemberRoles1_idx")
+}
+
+model MarketApps {
+  app_id       Int      @id @default(autoincrement())
+  app          String?  @db.Text
+  url          String   @db.VarChar(200)
+  domain       String   @db.VarChar(200)
+  member_id    Int
+  approved     Int?     @default(0)
+  date_created DateTime @default(now()) @db.Timestamp(0)
+}
+
+model MarketContent {
+  content_id   Int      @id @default(autoincrement())
+  title        String   @db.VarChar(200)
+  category_id  Int
+  content      String?  @db.Text
+  domain       String   @db.VarChar(200)
+  member_id    Int
+  slug         String?  @db.VarChar(200)
+  approved     Int?     @default(0)
+  date_created DateTime @default(now()) @db.Timestamp(0)
+}
+
+model MarketLinks {
+  link_id      Int      @id @default(autoincrement())
+  title        String   @db.VarChar(200)
+  category_id  Int
+  description  String?  @db.Text
+  url          String   @db.VarChar(200)
+  domain       String   @db.VarChar(200)
+  member_id    Int
+  approved     Int?     @default(0)
+  date_created DateTime @default(now()) @db.Timestamp(0)
+}
+
+model MarketPartnership {
+  partner_id      Int                          @id @default(autoincrement())
+  summary         String?                      @db.Text
+  company_name    String?                      @db.VarChar(200)
+  domain          String                       @db.VarChar(100)
+  url             String?                      @db.VarChar(200)
+  approved_by     Int
+  date_applied    DateTime                     @db.DateTime(0)
+  approved        Boolean?                     @default(false)
+  image           String?                      @db.VarChar(200)
+  member_id       BigInt
+  approved_status String?                      @db.VarChar(20)
+  slug            String?                      @db.VarChar(100)
+  type            String?                      @db.VarChar(200)
+  partner_views   Int?                         @default(0)
+  link_type       MarketPartnership_link_type? @default(link)
+  code            String?                      @db.Text
+  is_custom       Int?                         @default(0)
+  description     String?                      @db.Text
+  exchange_url    String?                      @db.VarChar(200)
+  ld_id           Int?                         @default(0)
+  ld_url          String?                      @db.VarChar(100)
+  in_equity       Int?                         @default(0)
+}
+
+model MarketProposals {
+  proposal_id    Int                       @id @default(autoincrement())
+  domain         String?                   @db.VarChar(100)
+  title          String?                   @db.VarChar(200)
+  summary        String?                   @db.Text
+  description    String?                   @db.Text
+  member_id      Int
+  date_submitted DateTime?                 @db.DateTime(0)
+  image          String?                   @db.VarChar(200)
+  doc_type       MarketProposals_doc_type? @default(google)
+  document       String?                   @db.VarChar(200)
+  document_title String?                   @db.VarChar(200)
+  slug           String?                   @db.VarChar(200)
+  proposal_views Int?                      @default(0)
+  approved       Boolean?                  @default(false)
+  in_equity      Int?                      @default(0)
+
+  @@index([member_id], map: "fk_MarketProposals_Members1_idx")
+}
+
+model MarketReferrals {
+  ref_id               Int      @id @default(autoincrement())
+  domain               String   @db.VarChar(100)
+  affiliate_product_id Int?
+  affiliate_group_id   Int?
+  is_group             Boolean? @default(false)
+  date_added           DateTime @default(now()) @db.Timestamp(0)
+  idev_product         Int?     @default(0)
+}
+
+model MemberEvents {
+  me_id     Int     @id @default(autoincrement())
+  member_id Int
+  event_id  Int
+  value     String? @db.Text
+}
+
+model MemberExperience {
+  ex_id     Int  @id @default(autoincrement())
+  rate      Int?
+  member_id Int
+  skill_id  Int
+
+  @@index([skill_id], map: "fk_MemberExperience_ExperienceSkills1_idx")
+  @@index([member_id], map: "fk_MemberExperience_Members1_idx")
+}
+
+model MemberLegalForms {
+  id            Int       @id @default(autoincrement())
+  member_id     Int?
+  document_id   Int?
+  date_uploaded DateTime? @db.DateTime(0)
+  notes         String?   @db.Text
+  filename      String?   @db.VarChar(100)
+  signed        Int?      @db.TinyInt
+}
+
+model MemberNotifications {
+  member_notification_id Int       @id @default(autoincrement())
+  notification_id        Int
+  member_id              Int?
+  date_notified          DateTime? @db.DateTime(0)
+  read                   Boolean?
+}
+
+model MemberProfile {
+  member_id            Int                        @id @unique(map: "member_id_UNIQUE")
+  intention            String?                    @db.VarChar(200)
+  looking_for_industry Int
+  age_group            String?                    @db.VarChar(200)
+  stage                String?                    @db.VarChar(200)
+  looking_skill        Int?
+  time_spare           String?                    @db.VarChar(200)
+  cash_investment      String?                    @db.VarChar(200)
+  capital_investment   String?                    @db.VarChar(200)
+  summary              String?                    @db.Text
+  current_status       String?                    @db.VarChar(200)
+  years_experience     String?                    @db.VarChar(100)
+  events_attended      String?                    @db.VarChar(250)
+  notify               Boolean?
+  profile_image        String?                    @db.VarChar(200)
+  video_embed          String?                    @db.Text
+  profile_views        Int?                       @default(0)
+  question             String?                    @db.VarChar(200)
+  answer               String?                    @db.Text
+  paypal               String?                    @db.VarChar(100)
+  education_background String?                    @db.Text
+  highest_achievement  String?                    @db.Text
+  skill_category       String?                    @db.VarChar(255)
+  work_for             String?                    @db.VarChar(255)
+  passionate_about     String?                    @db.Text
+  hours_work           String?                    @db.Text
+  abilities            String?                    @db.Text
+  rate_per_hour        String?                    @db.VarChar(100)
+  timezone             String?                    @db.VarChar(200)
+  dashboard            Int?                       @default(1)
+  id_filename          String?                    @db.VarChar(30)
+  id_approved          MemberProfile_id_approved? @default(dbgenerated("0"))
+  linkedin_id          String?                    @db.VarChar(100)
+
+  @@index([looking_for_industry], map: "fk_MemberProfile_MemberRoles1_idx")
+  @@index([member_id], map: "fk_MemberProfile_Members1_idx")
+  @@fulltext([abilities], map: "abilities")
+  @@fulltext([skill_category], map: "skill_category")
+  @@fulltext([skill_category, abilities], map: "skill_category_3")
+  @@fulltext([summary, abilities, skill_category], map: "summary")
+  @@fulltext([summary], map: "summary_2")
+}
+
+model MemberRoles {
+  role_id   Int     @id @default(autoincrement())
+  role_name String  @db.VarChar(200)
+  map_color String? @db.VarChar(100)
+}
+
+model MemberSocials {
+  s_id      Int      @id @default(autoincrement())
+  link      String?  @db.VarChar(200)
+  username  String?  @db.VarChar(200)
+  member_id Int
+  social_id Int
+  show      Boolean? @default(false)
+  value     String?  @db.VarChar(200)
+
+  @@index([member_id], map: "fk_MemberSocials_Members1_idx")
+  @@index([social_id], map: "fk_MemberSocials_Socials1_idx")
+}
+
+model Members {
+  MemberId                  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  Username                  String    @unique(map: "main_username") @db.VarChar(128)
+  EmailAddress              String    @unique(map: "email_address") @db.VarChar(255)
+  FirstName                 String    @db.VarChar(63)
+  LastName                  String    @db.VarChar(63)
+  CompanyName               String?   @db.VarChar(127)
+  Website                   String?   @db.VarChar(255)
+  LinkedinProfile           String?   @db.VarChar(255)
+  SignupDate                DateTime  @default(now()) @db.Timestamp(0)
+  LastLogin                 DateTime? @db.DateTime(0)
+  ReceiveEmailNotifications Boolean
+  Password                  String    @db.VarChar(1023)
+  AccountApproved           Boolean
+  StreetAddress             String    @db.VarChar(225)
+  City                      String    @db.VarChar(225)
+  StateProvince             String    @db.VarChar(225)
+  PostalCode                String    @db.VarChar(128)
+  Country                   String    @db.VarChar(225)
+  Phone                     String    @db.VarChar(128)
+  SellDomain                Boolean
+  Portfolio                 String?   @db.MediumText
+  MonthyRevenue             Decimal?  @db.Decimal(10, 2)
+  NumberDomains             Int?
+  EmailVerified             Int
+  LastLoginIp               String?   @db.VarChar(100)
+  EmailCode                 String?   @db.VarChar(200)
+  IsAdmin                   Boolean?
+  RoleId                    Int?      @default(0)
+  FromVnoc                  Boolean?  @default(false)
+  IndustryId                Int?      @default(0)
+  CountryId                 Int?      @default(0)
+  AffiliateId               BigInt?   @default(0)
+  LastLoginDate             DateTime? @db.DateTime(0)
+  Sent_Acct_Details         Int       @default(0)
+  In_Campaign               Int?      @default(0)
+  ReferredBy                BigInt?   @default(0)
+  IsDeveloper               Boolean?  @default(false)
+  location_lat              String?   @db.VarChar(100)
+  location_lng              String?   @db.VarChar(100)
+  crypto_onboarding         Boolean?  @default(false)
+  in_matter                 Boolean?  @default(false)
+  InBlog                    Boolean?  @default(false)
+
+  @@fulltext([Username, FirstName, LastName, EmailAddress], map: "Username")
+  @@fulltext([Username, FirstName, LastName], map: "Username_2")
+}
+
+model MembersTemp {
+  MemberId                  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  Username                  String    @db.VarChar(128)
+  EmailAddress              String    @db.VarChar(255)
+  FirstName                 String    @db.VarChar(63)
+  LastName                  String    @db.VarChar(63)
+  CompanyName               String?   @db.VarChar(127)
+  Website                   String?   @db.VarChar(255)
+  LinkedinProfile           String?   @db.VarChar(255)
+  SignupDate                DateTime  @default(now()) @db.Timestamp(0)
+  LastLogin                 DateTime? @db.DateTime(0)
+  ReceiveEmailNotifications Boolean
+  Password                  String    @db.VarChar(1023)
+  AccountApproved           Boolean
+  StreetAddress             String    @db.VarChar(225)
+  City                      String    @db.VarChar(225)
+  StateProvince             String    @db.VarChar(225)
+  PostalCode                String    @db.VarChar(128)
+  Country                   String    @db.VarChar(225)
+  Phone                     String    @db.VarChar(128)
+  SellDomain                Boolean
+  Portfolio                 String?   @db.Text
+  MonthyRevenue             Decimal?  @db.Decimal(10, 2)
+  NumberDomains             Int?
+  EmailVerified             Int
+  LastLoginIp               String?   @db.VarChar(100)
+  EmailCode                 String?   @db.VarChar(200)
+  IsAdmin                   Boolean?
+  RoleId                    Int?      @default(0)
+  FromVnoc                  Boolean?  @default(false)
+  IndustryId                Int?      @default(0)
+  CountryId                 Int?      @default(0)
+
+  @@fulltext([Username, FirstName, LastName, EmailAddress], map: "Username")
+}
+
+model Messages {
+  MessageId Int      @id @default(autoincrement())
+  MemberId  Int
+  FromId    Int
+  From      String   @db.VarChar(200)
+  FromEmail String   @db.VarChar(200)
+  Date      DateTime @db.DateTime(0)
+  Subject   String   @db.VarChar(255)
+  Message   String   @db.Text
+  Read      Int
+}
+
+model MicroApps {
+  AppId       Int      @id @default(autoincrement())
+  Name        String   @db.VarChar(200)
+  Url         String?  @db.VarChar(200)
+  Description String?  @db.Text
+  HasWidget   Boolean? @default(false)
+  CanManage   Boolean? @default(false)
+}
+
+model MicroFramework {
+  Id          Int  @id
+  FrameworkId Int
+  MicroAppId  Int
+  IsActive    Int? @default(0)
+}
+
+model MicroNews {
+  NewsId      Int       @id @default(autoincrement())
+  Message     String?   @db.Text
+  MemberId    Int
+  DateCreated DateTime? @db.DateTime(0)
+  DomainId    BigInt
+}
+
+model NewLeadAttributes {
+  AttributeId     Int     @id @default(autoincrement())
+  DomainId        Int?
+  BackgroundType  String? @db.VarChar(100)
+  BackgroundColor String? @db.VarChar(100)
+  BackgroundImage String? @db.VarChar(200)
+  TopDescription  String? @db.Text
+  BottomText      String? @db.Text
+  ImageStyle      String? @db.VarChar(200)
+}
+
+model NewsAttributes {
+  NewsAttributeId  Int     @id @default(autoincrement()) @db.UnsignedInt
+  DomainId         BigInt  @db.UnsignedBigInt
+  CName            String  @db.VarChar(255)
+  FooterContent    String? @db.Text
+  ContactUsContent String  @db.Text
+  UseAds           Int     @default(0)
+  IsActive         Int     @default(0)
+  Description      String? @db.Text
+  Keywords         String? @db.VarChar(255)
+  Banner1          String? @db.VarChar(255)
+  Banner2          String? @db.VarChar(255)
+  Banner3          String? @db.VarChar(255)
+  Banner4          String? @db.VarChar(255)
+  Banner5          String? @db.VarChar(255)
+  HeaderAdsHTML    String? @db.Text
+
+  @@index([DomainId], map: "FK_NewsAttributes_Domains")
+}
+
+model NewsFeed {
+  status_id   Int                   @id @default(autoincrement())
+  member_id   Int?
+  message     String?               @db.Text
+  date_posted DateTime?             @db.DateTime(0)
+  filter      NewsFeed_filter?      @default(dbgenerated("0"))
+  domain      String?               @db.VarChar(200)
+  parent_id   Int?                  @default(0)
+  posted_from NewsFeed_posted_from? @default(dashboard)
+  prev_title  String?               @db.VarChar(255)
+  prev_desc   String?               @db.Text
+  prev_href   String?               @db.VarChar(255)
+  prev_image  String?               @db.VarChar(255)
+}
+
+model NewsFeed2 {
+  status_id   Int                    @id @default(autoincrement())
+  member_id   Int?
+  message     String?                @db.Text
+  date_posted DateTime?              @db.DateTime(0)
+  filter      NewsFeed2_filter?
+  domain      String?                @db.VarChar(200)
+  parent_id   Int?
+  posted_from NewsFeed2_posted_from?
+  prev_title  String?                @db.VarChar(255)
+  prev_desc   String?                @db.Text
+  prev_href   String?                @db.VarChar(255)
+  prev_image  String?                @db.VarChar(255)
+}
+
+model NewsPages {
+  NewspageId Int    @id @default(autoincrement())
+  DomainId   Int
+  Category   String @db.VarChar(200)
+  Keyword    String @db.VarChar(200)
+  PageName   String @db.VarChar(200)
+}
+
+model NewsSocialValues {
+  NewsSocialValueId Int    @id @default(autoincrement())
+  DomainId          Int
+  DigFeed           String @db.VarChar(255)
+  TwitterProfile    String @db.VarChar(255)
+  FacebookProfile   String @db.VarChar(255)
+}
+
+model Notifications {
+  notification_id   Int                              @id @default(autoincrement())
+  notification_type Notifications_notification_type?
+  messsage          String?                          @db.Text
+  url               String?                          @db.VarChar(255)
+  task_id           Int?
+}
+
+model ProposalDiscussion {
+  discussion_id Int       @id @default(autoincrement())
+  member_id     Int
+  proposal_id   Int
+  message       String?   @db.Text
+  date_posted   DateTime? @db.DateTime(0)
+  tag_id        Int?
+}
+
+model ProposalDiscussionTags {
+  tag_id Int     @id @default(autoincrement())
+  name   String? @db.VarChar(50)
+}
+
+model ProposalVotes {
+  vote_id     Int       @id @default(autoincrement())
+  proposal_id Int
+  vote        Int
+  member_id   Int
+  date_voted  DateTime? @db.DateTime(0)
+}
+
+model ReadWelcome {
+  welcome_id Int @id @default(autoincrement())
+  user_id    Int
+}
+
+model RedirectAttribute {
+  AttributeId Int     @id @default(autoincrement())
+  DomainId    Int?
+  Domain      String? @db.VarChar(200)
+}
+
+model ReferralTasks {
+  id         Int     @id @default(autoincrement())
+  task       String? @db.VarChar(200)
+  ctb_reward Int?
+}
+
+model ReferralTasksMembers {
+  id        Int      @id @default(autoincrement())
+  task_id   Int
+  member_id Int
+  date_done DateTime @default(now()) @db.Timestamp(0)
+  url       String?  @db.VarChar(255)
+  status    String?  @default("pending") @db.VarChar(100)
+}
+
+model Respond_socials {
+  respond_id Int  @id @default(autoincrement())
+  member_id  Int?
+}
+
+model Server {
+  ServerId        Int      @id @default(autoincrement())
+  name            String?  @db.VarChar(200)
+  ssh_host        String?  @db.VarChar(200)
+  ssh_port        String?  @db.VarChar(10)
+  ssh_username    String?  @db.VarChar(100)
+  ssh_password    String?  @db.VarChar(100)
+  whm_host        String?  @db.VarChar(100)
+  whm_user        String?  @db.VarChar(100)
+  whm_pass        String?  @db.VarChar(100)
+  whm_plan        String?  @db.VarChar(100)
+  whm_port        String?  @default("2086") @db.VarChar(100)
+  whm_protocol    String?  @default("http") @db.VarChar(100)
+  cpanel_username String?  @db.VarChar(100)
+  cpanel_password String?  @db.VarChar(100)
+  cpanel_domain   String?  @db.VarChar(100)
+  cpanel_theme    String?  @db.VarChar(100)
+  cpanel_port     String?  @db.VarChar(100)
+  dns1            String?  @db.VarChar(100)
+  dns2            String?  @db.VarChar(100)
+  server_limit    Int?     @default(5000)
+  Is_Active       Boolean? @default(true)
+  dns3            String?  @db.VarChar(100)
+  dns4            String?  @db.VarChar(100)
+  subdomain_dir   String?  @db.VarChar(100)
+  is_docker       Int?     @default(0)
+  dns5            String?  @db.VarChar(100)
+  dns6            String?  @db.VarChar(100)
+  api_token       String?  @default("") @db.VarChar(200)
+}
+
+model ServiceAttributes {
+  AttributeId     Int     @id @default(autoincrement())
+  DomainId        Int?
+  Introduction    String? @db.Text
+  BackgroundImage String? @db.VarChar(200)
+  About           String? @db.Text
+}
+
+model Socials {
+  social_id    Int     @id @default(autoincrement())
+  name         String? @db.VarChar(200)
+  thumbnail    String? @db.VarChar(200)
+  type         String? @db.VarChar(100)
+  profile_link String? @db.VarChar(200)
+}
+
+model SolutionVotes {
+  vote_id     Int       @id @default(autoincrement())
+  member_id   Int
+  solution_id Int
+  date_voted  DateTime? @db.DateTime(0)
+}
+
+model SurveyAttribute {
+  SurveyId Int    @id @default(autoincrement())
+  DomainId Int
+  Title    String @db.VarChar(200)
+  Link     String @db.VarChar(200)
+  UsedNow  Int    @default(0)
+}
+
+model Tags {
+  TagId   BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  TagName String @db.VarChar(64)
+}
+
+model TaskApplications {
+  task_application_id Int                     @id @default(autoincrement())
+  userid              Int
+  vnoc_task_id        Int?
+  message             String?                 @db.Text
+  date_applied        DateTime?               @db.DateTime(0)
+  status              TaskApplications_status
+}
+
+model TeamBadgeMembers {
+  id            Int       @id @default(autoincrement())
+  member_id     Int
+  badge_id      Int
+  date_received DateTime? @db.DateTime(0)
+  domain_name   String    @db.VarChar(200)
+
+  @@unique([member_id, badge_id, domain_name], map: "domain_badge_member")
+}
+
+model TeamBadgeTaskFieldValues {
+  value_id    Int     @id @default(autoincrement())
+  field_id    Int
+  field_value String? @db.VarChar(250)
+  member_id   Int?
+}
+
+model TeamBadgeTaskFields {
+  field_id    Int    @id @default(autoincrement())
+  task_id     Int
+  field_label String @db.VarChar(200)
+  field_name  String @db.VarChar(100)
+}
+
+model TeamBadgeTasks {
+  task_id          Int     @id @default(autoincrement())
+  badge_id         Int?
+  task_name        String? @db.VarChar(200)
+  task_description String? @db.Text
+}
+
+model TeamBadges {
+  badge_id          Int     @id @default(autoincrement())
+  badge_name        String  @db.VarChar(200)
+  badge_description String? @db.Text
+}
+
+model TeamInvite {
+  invite_id    Int      @id @default(autoincrement())
+  member_id    Int
+  invited_id   Int
+  joined       Boolean? @default(false)
+  date_invited DateTime @default(now()) @db.Timestamp(0)
+  domain       String?  @db.VarChar(200)
+}
+
+model Twitter_accounts {
+  Twitter_account_id Int  @id @default(autoincrement())
+  MemberId           Int?
+  Twitter_id         Int?
+}
+
+model UnsubscribedMembers {
+  id               Int      @id @default(autoincrement())
+  EmailAddress     String?  @db.VarChar(200)
+  UnsubscribedDate DateTime @default(now()) @db.Timestamp(0)
+  Deleted          Boolean? @default(false)
+  domain           String?  @db.VarChar(100)
+}
+
+model ViewOnBoardWelcome {
+  viewboard_id Int  @id @default(autoincrement())
+  member_id    Int?
+  viewed       Int?
+}
+
+model WidgetTempActivities {
+  activity_id        Int      @id @default(autoincrement())
+  email              String   @db.VarChar(200)
+  activity           String   @db.VarChar(200)
+  rate_per_hour      String?  @db.VarChar(100)
+  idea               String?  @db.VarChar(200)
+  title              String?  @db.VarChar(200)
+  category_id        Int?
+  content            String?  @db.Text
+  description        String?  @db.Text
+  url                String?  @db.VarChar(200)
+  invitee_name       String?  @db.VarChar(200)
+  invitee_email      String?  @db.VarChar(200)
+  invitee_message    String?  @db.Text
+  capital_investment String?  @db.VarChar(200)
+  app                String?  @db.VarChar(200)
+  domain             String   @db.VarChar(200)
+  date_created       DateTime @default(now()) @db.Timestamp(0)
+  hours_work         String?  @db.VarChar(200)
+  referral_id        Int?
+}
+
+model WpLeadAttributes {
+  AttributeId     Int     @id @default(autoincrement())
+  DomainId        Int?    @unique(map: "domain_id")
+  BackgroundType  String? @db.VarChar(100)
+  BackgroundColor String? @db.VarChar(100)
+  BackgroundImage String? @db.VarChar(200)
+  ImageStyle      String? @db.VarChar(200)
+  Theme           String? @default("TheCorporation2") @db.VarChar(100)
+  WPUserName      String? @db.VarChar(100)
+  WPPassword      String? @db.VarChar(100)
+  About           String? @db.Text
+}
+
+model calendar {
+  id       Int      @id @default(autoincrement())
+  MemberId Int
+  date     DateTime @db.DateTime(0)
+}
+
+model crypto_airdrop_claims {
+  id             Int       @id @default(autoincrement()) @db.UnsignedInt
+  email          String?   @db.VarChar(255)
+  wallet_address String?   @db.VarChar(255)
+  amount         Float?
+  date_added     DateTime  @default(now()) @db.Timestamp(0)
+  transaction_id String?   @db.VarChar(255)
+  is_claimed     Boolean?  @default(false)
+  date_confirmed DateTime? @db.DateTime(0)
+  date_sent      DateTime? @db.DateTime(0)
+  chainId        Int?      @default(1)
+  token          String?   @db.VarChar(255)
+  sent_status    String?   @default("pending") @db.VarChar(100)
+  currency       String?   @db.VarChar(100)
+}
+
+model crypto_airdrop_request {
+  id             Int      @id @default(autoincrement()) @db.UnsignedInt
+  member_id      Int?
+  eth_address    String?  @db.VarChar(255)
+  transaction_id String?  @db.VarChar(255)
+  amount         Float?
+  date_requested DateTime @default(now()) @db.Timestamp(0)
+  chainId        Int?     @default(56)
+  email          String?  @db.VarChar(100)
+}
+
+model crypto_contributions {
+  id                  Int                          @id @default(autoincrement())
+  member_id           Int
+  trans_id            String?                      @db.VarChar(255)
+  token_amount        Float?                       @db.Float
+  token_currency      String?                      @default("CTB") @db.VarChar(100)
+  amount_usd          Float?                       @db.Float
+  amount_ctb          Int?                         @default(0)
+  notes               String?                      @db.Text
+  contribution_index  Int?
+  contribution_from   Int
+  date_of_transaction DateTime                     @default(now()) @db.Timestamp(0)
+  status              crypto_contributions_status? @default(pending)
+  contribution_key    String?                      @db.VarChar(50)
+  domain_id           BigInt?                      @default(408)
+  contribution_trans  String?                      @db.VarChar(255)
+  chainId             Int?                         @default(1)
+  sentChain           Int?                         @default(1)
+  user_address        String?                      @db.VarChar(200)
+  date_updated        DateTime                     @default(now()) @db.Timestamp(0)
+}
+
+model crypto_contributions_from {
+  id   Int     @id @default(autoincrement())
+  name String? @db.VarChar(255)
+}
+
+model crypto_contributions_history {
+  id           Int      @id @default(autoincrement())
+  member_id    Int
+  message      String   @db.Text
+  date_created DateTime @default(now()) @db.Timestamp(0)
+  chainId      Int?     @default(1)
+}
+
+model crypto_ctb_airdrop_transactions {
+  id             Int      @id @default(autoincrement()) @db.UnsignedInt
+  eth_address    String?  @db.VarChar(255)
+  transaction_id String?  @db.VarChar(255)
+  amount         Float?
+  date_sent      DateTime @default(now()) @db.Timestamp(0)
+  chainId        Int?     @default(4)
+}
+
+model crypto_member_wallet {
+  id             Int     @id @default(autoincrement())
+  member_id      Int
+  wallet_address String? @db.VarChar(255)
+  binance_wallet String? @db.VarChar(255)
+}
+
+model crypto_members_invite {
+  id           Int                                 @id @default(autoincrement())
+  member_id    Int
+  name         String?                             @db.VarChar(200)
+  email        String                              @db.VarChar(200)
+  invite_type  crypto_members_invite_invite_type?  @default(email)
+  signed_up    Boolean?                            @default(false)
+  token_status crypto_members_invite_token_status? @default(pending)
+  date_invited DateTime                            @default(now()) @db.Timestamp(0)
+}
+
+model crypto_onboarding_tasks {
+  id   Int     @id @default(autoincrement())
+  task String  @db.VarChar(255)
+  link String? @db.VarChar(255)
+}
+
+model crypto_onboarding_tasks_members {
+  id           Int      @id @default(autoincrement())
+  member_id    Int
+  task_id      Int
+  date_updated DateTime @default(now()) @db.Timestamp(0)
+}
+
+model ctb_other_transactions {
+  id                 Int      @id @default(autoincrement()) @db.UnsignedInt
+  option_id          Int
+  wallet_address     String?  @db.VarChar(255)
+  eth_transaction_id String?  @db.VarChar(255)
+  name               String?  @db.VarChar(100)
+  email              String?  @db.VarChar(100)
+  amount             Float?
+  status             String?  @default("pending") @db.VarChar(100)
+  notes              String?  @db.VarChar(255)
+  date_added         DateTime @default(now()) @db.Timestamp(0)
+  date_updated       DateTime @default(now()) @db.Timestamp(0)
+  chainId            Int?     @default(56)
+  ctb_price          Decimal? @db.Decimal(28, 18)
+  ctb_amount         Decimal? @db.Decimal(28, 18)
+  usd_amount         Decimal? @db.Decimal(28, 18)
+  sent_transaction   String?  @db.VarChar(255)
+  from_email         String?  @db.VarChar(100)
+  buy_transaction    String?  @db.VarChar(255)
+  eth_per_usd        Decimal? @db.Decimal(28, 12)
+  eth_per_ctb        Decimal? @db.Decimal(28, 12)
+}
+
+model ctb_prices {
+  id                  Int      @id @default(autoincrement())
+  date_of_transaction DateTime @default(now()) @db.Timestamp(0)
+  ctb_price           Decimal? @db.Decimal(28, 18)
+  chainId             Int?     @default(1)
+}
+
+model ctb_sent_transactions {
+  id                 Int      @id @default(autoincrement())
+  token_amount       Float?   @db.Float
+  token_currency     String?  @default("ctb") @db.VarChar(10)
+  to_name            String?  @db.VarChar(100)
+  to_email           String?  @db.VarChar(100)
+  to_address         String?  @db.VarChar(255)
+  date_sent          DateTime @default(now()) @db.Timestamp(0)
+  contribution_index Int?     @default(0)
+  trans_id           String?  @db.VarChar(255)
+  contribution_key   String?  @db.VarChar(50)
+  note               String?  @db.Text
+  from_email         String?  @db.VarChar(100)
+  from_name          String?  @db.VarChar(100)
+  chainId            Int?     @default(1)
+  trans_status       String?  @default("done") @db.VarChar(100)
+}
+
+model ctb_transactions {
+  id                  Int                            @id @default(autoincrement())
+  member_id           Int
+  trans_id            String?                        @db.VarChar(255)
+  ctb_amount          Decimal?                       @db.Decimal(28, 18)
+  date_of_transaction DateTime                       @default(now()) @db.Timestamp(0)
+  note                String?                        @db.Text
+  cron_status         String?                        @default("pending") @db.VarChar(200)
+  amount_eth          Decimal?                       @db.Decimal(28, 18)
+  amount_usd          Decimal?                       @db.Decimal(28, 18)
+  network_type        ctb_transactions_network_type? @default(main)
+  contribution_key    String?                        @db.VarChar(50)
+  buy_transaction     String?                        @db.VarChar(255)
+  buy_currency        String?                        @db.VarChar(100)
+  buy_amount          Decimal?                       @db.Decimal(28, 18)
+  buy_token_address   String?                        @db.VarChar(255)
+  buy_amount_string   String?                        @db.VarChar(200)
+  wallet_address      String?                        @db.VarChar(200)
+  esh_val             Decimal?                       @db.Decimal(28, 18)
+  esh_price           Decimal?                       @db.Decimal(28, 18)
+  ctb_price           Decimal?                       @db.Decimal(28, 18)
+  chainId             Int?                           @db.TinyInt
+}
+
+model event_timezone {
+  id            Int     @id @default(autoincrement())
+  timezone_code String? @db.VarChar(50)
+  description   String? @db.VarChar(255)
+  cities        String? @db.VarChar(255)
+}
+
+model forum_posts {
+  id          Int       @default(autoincrement())
+  userid      Int
+  topic_id    Int
+  message     String?   @db.Text
+  date_posted DateTime? @db.DateTime(0)
+  domain_id   Int?
+
+  @@id([id, userid, topic_id])
+  @@index([topic_id], map: "fk_forum_posts_forum_topics1")
+  @@index([userid], map: "fk_forum_posts_forum_users1")
+}
+
+model forum_topics {
+  id          Int      @default(autoincrement())
+  userid      Int
+  forums_id   Int
+  subject     String   @db.VarChar(200)
+  closed      Boolean? @default(false)
+  date_posted String?  @db.VarChar(45)
+  domain_id   Int?
+
+  @@id([id, userid, forums_id])
+  @@index([userid], map: "fk_forum_topics_forum_users")
+  @@index([forums_id], map: "fk_forum_topics_forums1")
+}
+
+model forum_users {
+  id              Int       @id @default(autoincrement())
+  domain_id       Int
+  username        String    @db.VarChar(200)
+  password        String    @db.VarChar(200)
+  email           String    @db.VarChar(200)
+  date_registered DateTime? @db.DateTime(0)
+  blocked         Boolean?  @default(false)
+  last_visit      DateTime? @db.DateTime(0)
+  is_admin        Boolean?  @default(false)
+}
+
+model forums {
+  id         Int     @id @default(autoincrement())
+  forum_name String  @db.VarChar(200)
+  forum_desc String? @db.Text
+}
+
+model iPartner_AppLeader {
+  ipartner_id               Int       @id @default(autoincrement())
+  domain                    String?   @db.VarChar(50)
+  fname                     String?   @db.VarChar(25)
+  lname                     String?   @db.VarChar(25)
+  email                     String?   @db.VarChar(50)
+  phone                     String?   @db.VarChar(25)
+  country                   String?   @db.VarChar(50)
+  city                      String?   @db.VarChar(50)
+  industry                  Int?
+  linkedin                  String?   @db.VarChar(100)
+  website                   String?   @db.VarChar(100)
+  skype                     String?   @db.VarChar(50)
+  twitter                   String?   @db.VarChar(50)
+  how_did_you_hear_about    String?   @db.VarChar(25)
+  own_applications          String?   @db.VarChar(25)
+  applications_to_integrate String?   @db.VarChar(25)
+  use_application           String?   @db.VarChar(25)
+  build_application         String?   @db.VarChar(25)
+  looking_for_job           String?   @db.VarChar(25)
+  seeking_developers        String?   @db.VarChar(25)
+  strengths                 String?   @db.Text
+  weaknesses                String?   @db.Text
+  resources_connections     String?   @db.Text
+  hobbies_passions          String?   @db.Text
+  business_advice           String?   @db.Text
+  currently_working         String?   @db.VarChar(25)
+  time_commitment           String?   @db.VarChar(50)
+  date_submitted            DateTime? @db.DateTime(0)
+  app_status                Int?      @db.TinyInt
+  in_blog                   Boolean?  @default(false)
+}
+
+model iPartner_Domain {
+  ipartner_domain_id Int                     @id @default(autoincrement())
+  first_name         String                  @db.VarChar(50)
+  last_name          String                  @db.VarChar(50)
+  company            String                  @db.VarChar(100)
+  title              String                  @db.VarChar(100)
+  industry_id        Int
+  email              String                  @db.VarChar(50)
+  phone_number       String?                 @db.VarChar(20)
+  country            Int
+  domain             String?                 @db.Text
+  domains_owned      String?                 @db.Text
+  monthly_stats      String?                 @db.VarChar(255)
+  traffic            String?                 @db.VarChar(255)
+  unique_visitors    String?                 @db.VarChar(255)
+  PR                 String?                 @db.VarChar(255)
+  members            String?                 @db.Text
+  revenue            String?                 @db.VarChar(255)
+  domain_history     String?                 @db.Text
+  domain_status      String?                 @db.VarChar(20)
+  domain_value       String?                 @db.VarChar(255)
+  develop_or_sell    String?                 @db.VarChar(255)
+  domain_monetizing  String?                 @db.Text
+  domain_to_do       String?                 @db.Text
+  business_idea      String?                 @db.Text
+  resources          String?                 @db.Text
+  goals              String?                 @db.Text
+  business_advice    String?                 @db.Text
+  date_submitted     DateTime?               @db.DateTime(0)
+  status             iPartner_Domain_status? @default(new)
+  approved_by        Int?                    @default(0)
+  parking_company    String?                 @db.VarChar(200)
+  in_blog            Boolean?                @default(false)
+}
+
+model iPartner_Domainlist {
+  id       Int     @id @default(autoincrement())
+  owner_id Int?
+  domain   String? @db.VarChar(100)
+}
+
+model iPartner_ProductService {
+  ipartner_id           Int                                 @id @default(autoincrement())
+  domain                String                              @db.VarChar(50)
+  fname                 String                              @db.VarChar(50)
+  lname                 String                              @db.VarChar(50)
+  email                 String                              @db.VarChar(50)
+  phone                 String?                             @db.VarChar(50)
+  country               Int?
+  city                  String?                             @db.VarChar(50)
+  industry              Int?
+  title                 String?                             @db.VarChar(50)
+  company               String?                             @db.VarChar(50)
+  website               String?                             @db.VarChar(50)
+  angelco               String?                             @db.VarChar(50)
+  gustcom               String?                             @db.VarChar(50)
+  crunchbase            String?                             @db.VarChar(50)
+  product_service_name  String?                             @db.VarChar(50)
+  product_service_desc  String?                             @db.Text
+  product_service_type  String?                             @db.VarChar(50)
+  offer_api             String?                             @db.VarChar(10)
+  target_market         String?                             @db.VarChar(255)
+  price_point           String?                             @db.VarChar(100)
+  strategic_ideas       String?                             @db.Text
+  partnership_value     String?                             @db.Text
+  partnership_benefits  String?                             @db.Text
+  partnership_envision  String?                             @db.Text
+  resources_connections String?                             @db.Text
+  expectations          String?                             @db.Text
+  business_advice       String?                             @db.Text
+  app_status            iPartner_ProductService_app_status? @default(new)
+  date_submitted        DateTime?                           @db.DateTime(0)
+  approved_by           Int?                                @default(0)
+  in_blog               Boolean?                            @default(false)
+}
+
+model iPartner_VentureLeader {
+  ipartner_id                        Int                                @id @default(autoincrement())
+  domain                             String?                            @db.VarChar(100)
+  fname                              String?                            @db.VarChar(25)
+  lname                              String?                            @db.VarChar(25)
+  email                              String?                            @db.VarChar(50)
+  phone                              String?                            @db.VarChar(25)
+  country                            String?                            @db.VarChar(50)
+  city                               String?                            @db.VarChar(50)
+  industry                           Int?
+  linkedin                           String?                            @db.VarChar(100)
+  website                            String?                            @db.VarChar(100)
+  skype                              String?                            @db.VarChar(50)
+  twitter                            String?                            @db.VarChar(50)
+  started_business_or_worked_startup String?                            @db.VarChar(25)
+  startup_role                       String?                            @db.VarChar(25)
+  why_interested                     String?                            @db.Text
+  ideas_concept_for_business         String?                            @db.Text
+  strengths_weaknesses               String?                            @db.Text
+  resources_connections              String?                            @db.Text
+  expectations_and_goals             String?                            @db.Text
+  hobbies_and_passions               String?                            @db.Text
+  business_advice                    String?                            @db.Text
+  time_commitment                    String?                            @db.VarChar(50)
+  date_submitted                     DateTime?                          @db.DateTime(0)
+  app_status                         iPartner_VentureLeader_app_status? @default(new)
+  approved_by                        Int?                               @default(0)
+  in_blog                            Boolean?                           @default(false)
+}
+
+model onboarding_tasks_members {
+  id           Int      @id @default(autoincrement())
+  member_id    Int
+  task_id      Int
+  date_updated DateTime @default(now()) @db.Timestamp(0)
+}
+
+model outsourcing_applicants {
+  app_id       Int      @id @default(autoincrement()) @db.UnsignedInt
+  member_id    Int
+  service_id   Int
+  cover_letter String?  @db.Text
+  cv_file      String?  @db.VarChar(225)
+  date_applied DateTime @default(now()) @db.Timestamp(0)
+  in_blog      Boolean? @default(false)
+}
+
+model outsourcing_categories {
+  category_id   Int     @id @default(autoincrement()) @db.UnsignedInt
+  parent_id     Int?    @default(0)
+  category_name String  @db.VarChar(128)
+  slug          String? @db.VarChar(255)
+}
+
+model outsourcing_client {
+  client_id    Int      @id @default(autoincrement()) @db.UnsignedInt
+  firstname    String   @db.VarChar(128)
+  lastname     String   @db.VarChar(128)
+  email        String   @db.VarChar(255)
+  country      String?  @db.VarChar(128)
+  company_name String?  @db.VarChar(128)
+  phone_number String?  @db.VarChar(128)
+  in_blog      Boolean? @default(false)
+  signup_date  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model outsourcing_project_services {
+  id         Int  @id @default(autoincrement())
+  project_id Int?
+  service_id Int?
+}
+
+model outsourcing_projects {
+  project_id     Int                               @id @default(autoincrement()) @db.UnsignedInt
+  client_id      Int
+  title          String                            @db.VarChar(255)
+  scope_months   String                            @db.VarChar(255)
+  budget_type    outsourcing_projects_budget_type? @default(per_hour)
+  budget_cost    Decimal?                          @default(0.00) @db.Decimal(20, 2)
+  description    String?                           @db.Text
+  file_attached  String?                           @db.VarChar(255)
+  date_added     DateTime                          @default(now()) @db.Timestamp(0)
+  vnoc_member_id Int?
+}
+
+model outsourcing_services {
+  service_id   Int    @id @default(autoincrement()) @db.UnsignedInt
+  category_id  Int?   @default(0)
+  service_name String @db.VarChar(128)
+  rate         Int?   @default(10)
+}
+
+model outsourcing_task_updates {
+  update_id    Int       @id @default(autoincrement())
+  task_id      Int?
+  message      String?   @db.LongText
+  member_id    Int?
+  date_created DateTime? @db.DateTime(0)
+}
+
+model outsourcing_tasks {
+  task_id       Int                            @id @default(autoincrement())
+  title         String?                        @db.VarChar(220)
+  description   String?                        @db.Text
+  project_id    Int?
+  assigned_to   Int?
+  created_by    Int?
+  start_time    DateTime?                      @db.DateTime(0)
+  end_time      DateTime?                      @db.DateTime(0)
+  goal_date     String?                        @db.VarChar(100)
+  status        outsourcing_tasks_status?      @default(new)
+  date_created  DateTime?                      @db.DateTime(0)
+  date_updated  DateTime?                      @db.DateTime(0)
+  outsource_job Boolean?                       @default(false)
+  for_contrib   Int?                           @default(0) @db.TinyInt
+  equity_hours  Int?                           @default(1)
+  equity_unit   outsourcing_tasks_equity_unit? @default(hrs)
+  is_milestone  Boolean?                       @default(false)
+  parent_id     Int?                           @default(0)
+  read          Int?                           @default(0)
+  tester_id     Int?
+}
+
+model readwelcome {
+  welcome_id Int @id @default(autoincrement())
+  user       Int
+}
+
+model test_table {
+  id   Int    @id @default(autoincrement())
+  test String @db.VarChar(255)
+
+  @@fulltext([test], map: "test")
+}
+
+enum Notifications_notification_type {
+  crowdtask
+  eservices
+  ideas
+  partners
+  team
+  newsfeed
+  custom_contribution @map("custom contribution")
+}
+
+enum ChallengeMemberTypes_type {
+  challenger
+  sponsor
+}
+
+enum ChallengeSponsor_SponsorshipType {
+  monetary
+  non_monetary @map("non-monetary")
+  equity
+}
+
+enum FrameworkServices_DNSType {
+  IP
+  CNAME
+}
+
+enum CustomContributionUpdates_posted_from {
+  vnoc
+  contrib
+}
+
+enum LegalDocuments_form_type {
+  dynamic
+  downloadable
+  url
+}
+
+enum NewsFeed_filter {
+  N0 @map("0")
+  N1 @map("1")
+}
+
+enum NewsFeed2_filter {
+  N0 @map("0")
+  N1 @map("1")
+}
+
+enum crypto_members_invite_invite_type {
+  facebook
+  google
+  url
+  email
+}
+
+enum outsourcing_projects_budget_type {
+  per_hour
+  per_project
+}
+
+enum DomainAds_type {
+  image_upload
+  image_url
+  text_ads
+}
+
+enum TaskApplications_status {
+  new
+  for_interview @map("for interview")
+  approved
+  declined
+}
+
+enum CustomCounterOffers_status {
+  new
+  approved
+  declined
+}
+
+enum crypto_members_invite_token_status {
+  pending
+  sent
+}
+
+enum Challenge_Solution_Approve {
+  N0 @map("0")
+  N1 @map("1")
+}
+
+enum Challenges_Solved {
+  N0 @map("0")
+  N1 @map("1")
+}
+
+enum NewsFeed_posted_from {
+  dashboard
+  brand
+}
+
+enum NewsFeed2_posted_from {
+  dashboard
+  brand
+}
+
+enum MarketProposals_doc_type {
+  google
+  file
+}
+
+enum ChallengeSponsor_Approved {
+  N0 @map("0")
+  N1 @map("1")
+}
+
+enum Challenges_Approved {
+  N1 @map("1")
+  N0 @map("0")
+}
+
+enum ctb_transactions_network_type {
+  test
+  main
+}
+
+enum outsourcing_tasks_status {
+  new
+  in_production          @map("in production")
+  for_testing            @map("for testing")
+  for_production_testing @map("for production testing")
+  completed
+}
+
+enum Event_is_private {
+  N0 @map("0")
+  N1 @map("1")
+}
+
+enum Event_is_paid {
+  N0 @map("0")
+  N1 @map("1")
+}
+
+enum crypto_contributions_status {
+  pending
+  approved
+  declined
+}
+
+enum MarketPartnership_link_type {
+  link
+  code
+}
+
+enum outsourcing_tasks_equity_unit {
+  hrs
+  mins
+}
+
+enum Challenges_is_featured {
+  N0 @map("0")
+  N1 @map("1")
+}
+
+enum Domains_DomainType {
+  domain
+  subdomain
+}
+
+enum Challenges_challenge_type {
+  onboarding
+  quiz
+  day
+}
+
+enum iPartner_VentureLeader_app_status {
+  new
+  approved
+  declined
+  for_interview @map("for interview")
+  interviewed
+}
+
+enum iPartner_Domain_status {
+  new
+  approved
+  declined
+  for_interview @map("for interview")
+  interviewed
+}
+
+enum iPartner_ProductService_app_status {
+  new
+  approved
+  declined
+  for_interview @map("for interview")
+  interviewed
+}
+
+enum MemberProfile_id_approved {
+  N0 @map("0")
+  N1 @map("1")
 }

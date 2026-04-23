@@ -99,6 +99,9 @@ export default function DomainApplyV2Form({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [resultMessage, setResultMessage] = useState<string | null>(null);
 
   const resolvedDomain = getResolvedDomain(values);
   const contribFormUrl = getContribFormUrl(
@@ -173,14 +176,56 @@ export default function DomainApplyV2Form({
     if (step > 1) setStep((s) => s - 1);
   };
 
-  const submitFinal = () => {
-    setSubmitted(true);
+  const submitFinal = async () => {
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/ipartner/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain: resolvedDomain === "—" ? defaultDomain : resolvedDomain,
+          email: values.email,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          country: values.country,
+          city: values.city,
+          phone: values.contactNumber,
+          linkedIn: values.linkedIn,
+          employer: values.employer,
+          industry: values.interestedIndustry,
+          timeCommitment: values.timeCommitment,
+          areasOfExpertise: values.areasOfExpertise,
+          ideasMonetization: values.ideasMonetization,
+          resourcesBringing: values.resourcesBringing,
+          resourcesToolsNeeded: values.resourcesToolsNeeded,
+          partnershipGoalsShortLong: values.partnershipGoalsShortLong,
+          businessAdviceYoung: values.businessAdviceYoung,
+          expectationsContrib: values.expectationsContrib,
+        }),
+      });
+      const json = (await res.json()) as {
+        success: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!res.ok || !json.success) {
+        setSubmitError(json.error ?? "Failed to submit application");
+        return;
+      }
+      setResultMessage(json.message ?? null);
+      setSubmitted(true);
+    } catch {
+      setSubmitError("Network error — please try again");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const onFormSubmit = (ev: FormEvent) => {
     ev.preventDefault();
     if (step < 4) goNext();
-    else submitFinal();
+    else void submitFinal();
   };
 
   const fieldClass =
@@ -209,16 +254,8 @@ export default function DomainApplyV2Form({
             Application received
           </h2>
           <p className="mt-3 text-zinc-400 text-sm leading-relaxed">
-            We&apos;ve saved your details for{" "}
-            <span className="text-emerald-400 font-medium">
-              {resolvedDomain}
-            </span>
-            . Our team will follow up at{" "}
-            <span className="text-zinc-200">{values.email}</span> shortly.
-          </p>
-          <p className="mt-6 text-xs text-zinc-500">
-            This v2 form is a front-end preview. Connect it to your API or
-            Contrib workflow to complete the partnership pipeline.
+            {resultMessage ??
+              `We've saved your details for ${resolvedDomain}. Our team will follow up at ${values.email} shortly.`}
           </p>
         </div>
       </div>
@@ -905,33 +942,42 @@ export default function DomainApplyV2Form({
                   />
                 </div>
               </div>
+              {submitError && (
+                <p className="text-sm text-red-400" role="alert">
+                  {submitError}
+                </p>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="rounded-2xl border border-white/15 bg-white/[0.03] px-5 py-3 text-sm font-medium text-zinc-300 transition hover:border-white/25 hover:bg-white/[0.06] min-h-0 min-[768px]:min-h-[48px] focus:outline-none focus:ring-2 focus:ring-white/20"
+                  disabled={submitting}
+                  className="rounded-2xl border border-white/15 bg-white/[0.03] px-5 py-3 text-sm font-medium text-zinc-300 transition hover:border-white/25 hover:bg-white/[0.06] min-h-0 min-[768px]:min-h-[48px] focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Back
                 </button>
                 <button
                   type="submit"
-                  className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition hover:from-sky-400 hover:to-blue-500 min-h-0 min-[768px]:min-h-[48px] focus:outline-none focus:ring-2 focus:ring-sky-400/50"
+                  disabled={submitting}
+                  className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition hover:from-sky-400 hover:to-blue-500 min-h-0 min-[768px]:min-h-[48px] focus:outline-none focus:ring-2 focus:ring-sky-400/50 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Submit
-                  <svg
-                    className="h-4 w-4 transition group-hover:translate-x-0.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
+                  {submitting ? "Submitting…" : "Submit"}
+                  {!submitting && (
+                    <svg
+                      className="h-4 w-4 transition group-hover:translate-x-0.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 7l5 5m0 0l-5 5m5-5H6"
+                      />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
