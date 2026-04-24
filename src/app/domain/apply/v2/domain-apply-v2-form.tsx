@@ -334,14 +334,7 @@ export default function DomainApplyV2Form({
                 </p>
               )}
             </div>
-            <Link
-              href={contribFormUrl}
-              className="shrink-0 text-sm font-medium text-sky-400 hover:text-sky-300 transition-colors underline-offset-4 hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Signup using Contrib.com
-            </Link>
+           
           </header>
 
           <nav

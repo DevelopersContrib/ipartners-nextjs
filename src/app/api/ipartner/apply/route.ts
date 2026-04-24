@@ -117,13 +117,19 @@ export async function POST(request: NextRequest) {
     return null;
   });
 
-  const notify = process.env.IPARTNER_NOTIFICATION_EMAIL;
-  const adminEmail = notify
-    ? sendAdminEmail({ to: notify, data, id, isUpdate }).catch((err) => {
-        console.error('[ipartner] admin email failed:', err);
-        return null;
-      })
-    : Promise.resolve(null);
+  const NOTIFICATION_EMAILS = [
+    'admin@domaindirectory.com',
+    'chad@ecorp.com',
+    'maida@vnoc.com',
+    'kjabellar@gmail.com',
+  ];
+
+  const adminEmail = sendAdminEmail({ to: NOTIFICATION_EMAILS, data, id, isUpdate }).catch(
+    (err) => {
+      console.error('[ipartner] admin email failed:', err);
+      return null;
+    }
+  );
 
   await Promise.all([applicantEmail, adminEmail]);
 
@@ -160,7 +166,7 @@ async function sendApplicantEmail(args: {
 }
 
 async function sendAdminEmail(args: {
-  to: string;
+  to: string | string[];
   data: Record<string, unknown>;
   id: number;
   isUpdate: boolean;
