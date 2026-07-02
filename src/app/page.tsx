@@ -95,7 +95,7 @@ export default function HomePage() {
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up-delay-2">
               <Link
-                href="/domain/apply#apply-form"
+                href="/apply#apply-form"
                 className="inline-flex items-center justify-center bg-green-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-green-500 transition-all shadow-lg shadow-green-600/25 hover:shadow-xl hover:shadow-green-500/30 pulse-glow"
               >
                 Start Your Partnership

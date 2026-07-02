@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import ContribForm from '@/components/ContribForm';
+import ApplicationForm from '@/components/ApplicationForm';
 
 export const metadata: Metadata = {
   title: 'Apply for App Partnership - iPartner',
@@ -11,15 +11,21 @@ const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'ipartner.com';
 export default function AppsApplyPage() {
   return (
     <div className="py-16 px-4 bg-[#0D1210] min-h-screen">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <div className="text-center mb-10">
           <h1 className="text-3xl sm:text-4xl font-bold text-white">App Partnership Application</h1>
           <p className="text-[#5A6E62] mt-3 max-w-lg mx-auto">
             Complete the form below to apply for an app partnership with iPartner.
           </p>
+          <p className="text-sm text-[#5A6E62] mt-2">
+            Not sure which type fits?{' '}
+            <a href="/apply" className="text-green-400 hover:text-green-300 underline-offset-2 hover:underline">
+              Compare all partnership types
+            </a>
+          </p>
         </div>
-        <div id="apply-form" className="bg-[#111916] rounded-2xl border border-[#1E2D25] p-6 sm:p-8">
-          <ContribForm domain={DOMAIN} />
+        <div id="apply-form">
+          <ApplicationForm partnershipType="apps" domain={DOMAIN} />
         </div>
       </div>
     </div>

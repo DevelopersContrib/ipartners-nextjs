@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import LoginModal from './LoginModal';
 import type { PartnershipType } from '@/lib/types';
+import { PARTNERSHIP_LABELS } from '@/lib/partnerships';
 
 interface ApplicationFormProps {
   partnershipType: PartnershipType;
@@ -27,13 +28,6 @@ interface SelectOption {
   id: string;
   name: string;
 }
-
-const partnershipLabels: Record<PartnershipType, string> = {
-  domain: 'Domain Partnership',
-  apps: 'App Partnership',
-  leaders: 'Leader Partnership',
-  'product-service': 'Product/Service Partnership',
-};
 
 const steps = [
   { num: 1, label: 'Account' },
@@ -121,10 +115,20 @@ export default function ApplicationForm({
     e.preventDefault();
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await fetch('/api/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          partnershipType,
+          domain: formData.domain || domain,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Submission failed');
       setSubmitted(true);
-    } catch {
-      alert('Submission failed. Please try again.');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Submission failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -141,7 +145,7 @@ export default function ApplicationForm({
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">Application Submitted!</h2>
           <p className="text-[#8B9E93] leading-relaxed">
-            Thank you for applying for a {partnershipLabels[partnershipType]}.
+            Thank you for applying for a {PARTNERSHIP_LABELS[partnershipType]}.
             We&apos;ll review your application and get back to you soon.
           </p>
         </div>
@@ -190,7 +194,7 @@ export default function ApplicationForm({
 
       <form onSubmit={handleSubmit} className="bg-[#111916] rounded-2xl shadow-xl border border-[#1E2D25] p-6 sm:p-8">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
-          {partnershipLabels[partnershipType]}
+          {PARTNERSHIP_LABELS[partnershipType]}
         </h2>
         <p className="text-sm text-[#5A6E62] mb-7">Step {step} of 3</p>
 
