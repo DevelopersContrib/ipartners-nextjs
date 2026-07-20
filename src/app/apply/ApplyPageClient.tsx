@@ -8,8 +8,18 @@ import { PARTNERSHIP_LABELS } from '@/lib/partnerships';
 
 const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'ipartner.com';
 
-export default function ApplyPageClient() {
-  const [partnershipType, setPartnershipType] = useState<PartnershipType>('domain');
+export default function ApplyPageClient({
+  initialEmail = '',
+  initialType,
+  initialDomain,
+  signedIn = false,
+}: {
+  initialEmail?: string;
+  initialType?: PartnershipType;
+  initialDomain?: string;
+  signedIn?: boolean;
+}) {
+  const [partnershipType, setPartnershipType] = useState<PartnershipType>(initialType ?? 'domain');
 
   return (
     <div className="py-16 px-4 bg-[#0D1210] min-h-screen">
@@ -19,6 +29,11 @@ export default function ApplyPageClient() {
           <p className="text-[#5A6E62] mt-3 max-w-lg mx-auto">
             Choose the partnership type that fits you, then complete the application.
           </p>
+          {signedIn && initialEmail && (
+            <p className="text-sm text-[#8B9E93] mt-4">
+              Signed in as <span className="text-white font-medium">{initialEmail}</span>
+            </p>
+          )}
         </div>
 
         <div id="apply-form">
@@ -26,7 +41,11 @@ export default function ApplyPageClient() {
           <p className="text-sm text-[#8B9E93] mb-6 text-center">
             Applying for: <span className="text-green-400 font-medium">{PARTNERSHIP_LABELS[partnershipType]}</span>
           </p>
-          <ApplicationForm partnershipType={partnershipType} domain={DOMAIN} />
+          <ApplicationForm
+            partnershipType={partnershipType}
+            domain={initialDomain || DOMAIN}
+            initialEmail={initialEmail}
+          />
         </div>
       </div>
     </div>

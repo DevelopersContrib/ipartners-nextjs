@@ -12,7 +12,8 @@
     "db:check": "node scripts/db-apply.mjs --dry-run",
     "db:forbidden": "node -e \"console.error('FORBIDDEN: never run prisma db push / prisma migrate against the shared contrib_rdb — it powers a public widget on ~30k domains. Use: npm run db:apply prisma/migrations/<file>.sql'); process.exit(1)\"",
     "prisma:db:push": "npm run db:forbidden",
-    "prisma:migrate": "npm run db:forbidden"
+    "prisma:migrate": "npm run db:forbidden",
+    "test:handoff": "tsx --conditions=react-server --env-file=.env scripts/test-handoff.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.1090.0",

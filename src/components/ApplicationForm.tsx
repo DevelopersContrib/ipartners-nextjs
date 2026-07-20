@@ -8,6 +8,8 @@ interface ApplicationFormProps {
   partnershipType: PartnershipType;
   domain?: string;
   inviteCode?: string;
+  /** Known email (signed-in partner, or a verified DomainDirectory hand-off). */
+  initialEmail?: string;
 }
 
 interface FormData {
@@ -38,8 +40,10 @@ export default function ApplicationForm({
   partnershipType,
   domain = 'ipartner.com',
   inviteCode,
+  initialEmail = '',
 }: ApplicationFormProps) {
-  const [step, setStep] = useState(1);
+  // If we already know who they are, don't make them retype it — start at Profile.
+  const [step, setStep] = useState(initialEmail ? 2 : 1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [countries, setCountries] = useState<SelectOption[]>([]);
@@ -51,7 +55,7 @@ export default function ApplicationForm({
   }>({ roles: [], industries: [], experiences: [], intentions: [] });
 
   const [formData, setFormData] = useState<FormData>({
-    email: '',
+    email: initialEmail,
     firstname: '',
     lastname: '',
     domain: '',

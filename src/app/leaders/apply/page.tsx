@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import ApplicationForm from '@/components/ApplicationForm';
+import { getCurrentPartner } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Apply for Leader Partnership - iPartner',
@@ -8,7 +11,9 @@ export const metadata: Metadata = {
 
 const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'ipartner.com';
 
-export default function LeadersApplyPage() {
+export default async function LeadersApplyPage() {
+  const partner = await getCurrentPartner();
+
   return (
     <div className="py-16 px-4 bg-[#0D1210] min-h-screen">
       <div className="max-w-2xl mx-auto">
@@ -25,7 +30,7 @@ export default function LeadersApplyPage() {
           </p>
         </div>
         <div id="apply-form">
-          <ApplicationForm partnershipType="leaders" domain={DOMAIN} />
+          <ApplicationForm partnershipType="leaders" domain={DOMAIN} initialEmail={partner?.email ?? ''} />
         </div>
       </div>
     </div>
