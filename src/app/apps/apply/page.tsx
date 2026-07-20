@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import ApplicationForm from '@/components/ApplicationForm';
 import { getCurrentPartner } from '@/lib/auth';
+import { getPartnerProfile } from '@/lib/partner-profile';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,8 @@ const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'ipartner.com';
 
 export default async function AppsApplyPage() {
   const partner = await getCurrentPartner();
+  // Pull everything we already hold on them so the form arrives filled in.
+  const profile = partner ? await getPartnerProfile(partner.email) : null;
 
   return (
     <div className="py-16 px-4 bg-[#0D1210] min-h-screen">
@@ -30,7 +33,7 @@ export default async function AppsApplyPage() {
           </p>
         </div>
         <div id="apply-form">
-          <ApplicationForm partnershipType="apps" domain={DOMAIN} initialEmail={partner?.email ?? ''} />
+          <ApplicationForm partnershipType="apps" domain={DOMAIN} initialEmail={partner?.email ?? ''} initialProfile={profile ?? undefined} />
         </div>
       </div>
     </div>

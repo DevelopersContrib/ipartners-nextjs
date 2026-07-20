@@ -52,6 +52,10 @@ model Members {
   LastName      String?   @db.VarChar(255)
   CompanyName   String?   @db.VarChar(255)
   Website       String?   @db.VarChar(255)
+  /// NOT NULL in the DB, and holds a country NAME ("United States"), with
+  /// inconsistent casing ("philippines"). The iPartner_* tables store IDs
+  /// instead — see resolveOption in ApplicationForm.
+  Country       String    @db.VarChar(225)
   SignupDate    DateTime?
   LastLogin     DateTime?
 
@@ -104,6 +108,12 @@ model iPartner_Domain {
   first_name         String?   @db.VarChar(255)
   last_name          String?   @db.VarChar(255)
   company            String?   @db.VarChar(255)
+  title              String    @db.VarChar(100)
+  phone_number       String?   @db.VarChar(20)
+  /// FK-style ids that line up with the /api/countries and /api/config option
+  /// lists — usable for prefill directly, unlike Members.Country.
+  country            Int
+  industry_id        Int
   email              String?   @db.VarChar(255)
   domain             String?   @db.Text
   domains_owned      String?   @db.Text

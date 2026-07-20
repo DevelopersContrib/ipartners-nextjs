@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import ApplyPageClient from './ApplyPageClient';
 import { getCurrentPartner } from '@/lib/auth';
+import { getPartnerProfile } from '@/lib/partner-profile';
 import type { PartnershipType } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -31,12 +32,15 @@ export default async function ApplyPage({
   searchParams: Promise<{ type?: string; domain?: string }>;
 }) {
   const [partner, params] = await Promise.all([getCurrentPartner(), searchParams]);
+  // Pull everything we already hold on them so the form arrives filled in.
+  const profile = partner ? await getPartnerProfile(partner.email) : null;
 
   return (
     <ApplyPageClient
       initialEmail={partner?.email ?? ''}
       initialType={coerceType(params.type)}
       initialDomain={params.domain}
+      initialProfile={profile ?? undefined}
       signedIn={!!partner}
     />
   );

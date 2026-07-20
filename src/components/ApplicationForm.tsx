@@ -10,6 +10,18 @@ interface ApplicationFormProps {
   inviteCode?: string;
   /** Known email (signed-in partner, or a verified DomainDirectory hand-off). */
   initialEmail?: string;
+  /**
+   * What we already know about them, from Members + any prior application.
+   * country/industry may arrive as either an id ("147") or a name ("United
+   * States") depending on which table they came from — resolveOption sorts it
+   * out once the <select> options have loaded.
+   */
+  initialProfile?: {
+    firstname?: string;
+    lastname?: string;
+    country?: string;
+    industry?: string;
+  };
 }
 
 interface FormData {
@@ -30,6 +42,23 @@ interface SelectOption {
   name: string;
 }
 
+/**
+ * Our stored country/industry values are a mix of ids ("147", from the iPartner
+ * tables) and names ("United States" / "philippines", from Members). The
+ * <select> is keyed by id, so try id first, then match the name
+ * case-insensitively. Returns '' when nothing matches — silently prefilling an
+ * unmatched value would leave a blank required field the partner may not spot.
+ */
+export function resolveOption(raw: string | undefined, options: SelectOption[]): string {
+  const v = (raw || '').trim();
+  if (!v || options.length === 0) return '';
+  const byId = options.find((o) => String(o.id) === v);
+  if (byId) return String(byId.id);
+  const lower = v.toLowerCase();
+  const byName = options.find((o) => o.name.trim().toLowerCase() === lower);
+  return byName ? String(byName.id) : '';
+}
+
 const steps = [
   { num: 1, label: 'Account' },
   { num: 2, label: 'Profile' },
@@ -41,6 +70,7 @@ export default function ApplicationForm({
   domain = 'ipartner.com',
   inviteCode,
   initialEmail = '',
+  initialProfile,
 }: ApplicationFormProps) {
   // If we already know who they are, don't make them retype it — start at Profile.
   const [step, setStep] = useState(initialEmail ? 2 : 1);
@@ -56,8 +86,8 @@ export default function ApplicationForm({
 
   const [formData, setFormData] = useState<FormData>({
     email: initialEmail,
-    firstname: '',
-    lastname: '',
+    firstname: initialProfile?.firstname || '',
+    lastname: initialProfile?.lastname || '',
     domain: '',
     country: '',
     role: '',
@@ -78,6 +108,20 @@ export default function ApplicationForm({
       .then((data) => { if (data.formData) setFormOptions(data.formData); })
       .catch(() => {});
   }, []);
+
+  // Resolve the known country/industry once their option lists have loaded.
+  // Only fills fields the partner hasn't touched, so this never clobbers an edit.
+  const profileCountry = initialProfile?.country;
+  const profileIndustry = initialProfile?.industry;
+  useEffect(() => {
+    if (!profileCountry && !profileIndustry) return;
+    setFormData((prev) => {
+      const country = prev.country || resolveOption(profileCountry, countries);
+      const industry = prev.industry || resolveOption(profileIndustry, formOptions.industries);
+      if (country === prev.country && industry === prev.industry) return prev;
+      return { ...prev, country, industry };
+    });
+  }, [countries, formOptions.industries, profileCountry, profileIndustry]);
 
   useEffect(() => {
     if (!inviteCode) return;

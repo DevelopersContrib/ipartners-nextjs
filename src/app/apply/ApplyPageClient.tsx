@@ -12,11 +12,13 @@ export default function ApplyPageClient({
   initialEmail = '',
   initialType,
   initialDomain,
+  initialProfile,
   signedIn = false,
 }: {
   initialEmail?: string;
   initialType?: PartnershipType;
   initialDomain?: string;
+  initialProfile?: { firstname?: string; lastname?: string; country?: string; industry?: string };
   signedIn?: boolean;
 }) {
   const [partnershipType, setPartnershipType] = useState<PartnershipType>(initialType ?? 'domain');
@@ -45,6 +47,7 @@ export default function ApplyPageClient({
             partnershipType={partnershipType}
             domain={initialDomain || DOMAIN}
             initialEmail={initialEmail}
+            initialProfile={initialProfile}
           />
         </div>
       </div>
