@@ -1,0 +1,158 @@
+// ipartners.com — partner portal over the existing VNOC partnership system (contrib_rdb).
+//
+// ⛔ NEVER run `prisma db push` or `prisma migrate*` against this DB.
+// contrib_rdb is SHARED PRODUCTION. MarketPartnership alone powers a public widget
+// on ~30k domains. Prisma treats this schema as the FULL database and would DROP
+// every table not listed here.
+//
+// Schema changes are hand-written additive SQL under prisma/migrations/, applied with:
+//   npm run db:check prisma/migrations/<file>.sql   # dry-run safety scan
+//   npm run db:apply prisma/migrations/<file>.sql   # apply (ipp_ tables only)
+// scripts/db-apply.mjs REFUSES any DROP/TRUNCATE/RENAME outside the `ipp_` prefix.
+//
+// Everything we OWN is prefixed `ipp_`. Everything else below models EXISTING tables
+// that we read (and, where noted, write through vetted paths) but never migrate.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("CONTRIB_DATABASE_URL")
+}
+
+// ─────────────────────────── OURS (ipp_) ───────────────────────────
+
+/// One-time 6-digit sign-in codes. Replaces the legacy password auth that sent
+/// credentials over plain HTTP in a query string.
+model IppAuthCode {
+  token     String   @id @db.VarChar(191)
+  email     String   @db.VarChar(191)
+  code      String   @db.VarChar(12)
+  attempts  Int      @default(0)
+  next      String?  @db.VarChar(255)
+  expiresAt DateTime @map("expires_at")
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email], map: "idx_ipp_auth_codes_email")
+  @@map("ipp_auth_codes")
+}
+
+// ───────────────────── EXISTING — read/write, never migrate ─────────────────────
+
+/// Contrib member store (108k rows) — the identity source of truth.
+/// We match on EmailAddress; MemberId links to MarketPartnership.member_id.
+model Members {
+  MemberId      Int       @id
+  Username      String?   @db.VarChar(255)
+  EmailAddress  String?   @db.VarChar(255)
+  FirstName     String?   @db.VarChar(255)
+  LastName      String?   @db.VarChar(255)
+  CompanyName   String?   @db.VarChar(255)
+  Website       String?   @db.VarChar(255)
+  SignupDate    DateTime?
+  LastLogin     DateTime?
+
+  @@map("Members")
+}
+
+/// Published partnerships (81k rows) — renders publicly via the contrib partners
+/// widget on ~30k domains. READ-ONLY here; publishing stays in manage-app.
+model MarketPartnership {
+  partner_id      Int      @id
+  company_name    String?  @db.VarChar(255)
+  domain          String?  @db.VarChar(255)
+  url             String?  @db.VarChar(255)
+  summary         String?  @db.Text
+  member_id       BigInt?
+  approved        Int?     @db.TinyInt
+  approved_status String?  @db.VarChar(255)
+  type            String?  @db.VarChar(255)
+  slug            String?  @db.VarChar(255)
+  in_equity       Int?
+  date_applied    DateTime?
+
+  @@map("MarketPartnership")
+}
+
+/// General partnership applications (intake). 1,323 rows, ~1,308 unreviewed.
+model IPartner {
+  ipartner_id       Int       @id
+  firstname         String?   @db.VarChar(255)
+  lastname          String?   @db.VarChar(255)
+  email             String?   @db.VarChar(255)
+  phone             String?   @db.VarChar(255)
+  linkedin          String?   @db.VarChar(255)
+  employer          String?   @db.VarChar(255)
+  location          String?   @db.VarChar(255)
+  domain_name       String?   @db.VarChar(255)
+  industry          String?   @db.VarChar(255)
+  partnership_goals String?   @db.Text
+  concept_ideas     String?   @db.Text
+  status            Int?      @db.TinyInt
+  date_submitted    DateTime?
+
+  @@map("IPartner")
+}
+
+/// Domain-partnership applications — INBOUND: external owners bringing their own
+/// portfolios. (Distinct from our outbound catalog; do not conflate.)
+model iPartner_Domain {
+  ipartner_domain_id Int       @id
+  first_name         String?   @db.VarChar(255)
+  last_name          String?   @db.VarChar(255)
+  company            String?   @db.VarChar(255)
+  email              String?   @db.VarChar(255)
+  domain             String?   @db.Text
+  domains_owned      String?   @db.Text
+  develop_or_sell    String?   @db.VarChar(255)
+  status             String?
+  date_submitted     DateTime?
+
+  @@map("iPartner_Domain")
+}
+
+// The three variant tables share a shape: PK `ipartner_id`, `fname`/`lname`,
+// `email`, `domain`, `app_status`, `date_submitted`.
+
+model iPartner_AppLeader {
+  ipartner_id    Int       @id
+  domain         String?   @db.VarChar(255)
+  fname          String?   @db.VarChar(255)
+  lname          String?   @db.VarChar(255)
+  email          String?   @db.VarChar(255)
+  industry       String?   @db.VarChar(255)
+  app_status     String?   @db.VarChar(255)
+  date_submitted DateTime?
+
+  @@map("iPartner_AppLeader")
+}
+
+model iPartner_ProductService {
+  ipartner_id          Int       @id
+  domain               String?   @db.VarChar(255)
+  fname                String?   @db.VarChar(255)
+  lname                String?   @db.VarChar(255)
+  email                String?   @db.VarChar(255)
+  company              String?   @db.VarChar(255)
+  product_service_name String?   @db.VarChar(255)
+  app_status           String?   @db.VarChar(255)
+  date_submitted       DateTime?
+
+  @@map("iPartner_ProductService")
+}
+
+model iPartner_VentureLeader {
+  ipartner_id    Int       @id
+  domain         String?   @db.VarChar(255)
+  fname          String?   @db.VarChar(255)
+  lname          String?   @db.VarChar(255)
+  email          String?   @db.VarChar(255)
+  industry       String?   @db.VarChar(255)
+  app_status     String?   @db.VarChar(255)
+  date_submitted DateTime?
+
+  @@map("iPartner_VentureLeader")
+}

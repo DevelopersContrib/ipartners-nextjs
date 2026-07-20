@@ -43,16 +43,6 @@ export interface AgentCard {
  */
 export const capabilities: AgentCapability[] = [
   {
-    name: 'authenticate_user',
-    description: 'Authenticate a user via their Contrib email and password. Returns user profile data if valid.',
-    endpoint: '/api/auth',
-    method: 'POST',
-    parameters: [
-      { name: 'email', type: 'string', required: true, description: 'User email address' },
-      { name: 'password', type: 'string', required: false, description: 'User password' },
-    ],
-  },
-  {
     name: 'get_countries',
     description: 'Retrieve the list of supported countries for partnership applications.',
     endpoint: '/api/countries',

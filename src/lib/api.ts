@@ -78,17 +78,13 @@ export async function getDomainAffiliateId(domain: string): Promise<string> {
 
 // --- iPartner API (api1.contrib.co) ---
 
-export async function authenticateUser(
-  email: string,
-  password?: string
-): Promise<UserData | null> {
-  const params = new URLSearchParams({ email });
-  if (password) params.append('password', password);
-  const data = await fetchJSON<{ data: UserData }>(
-    `${IPARTNER_API}/GetVNOCUserData?${params.toString()}`
-  );
-  return data?.data ?? null;
-}
+// REMOVED: authenticateUser(email, password)
+// It called GetVNOCUserData over PLAIN HTTP with the password in the query
+// string — credentials exposed to every proxy and server log in the path, and
+// it persisted no session. Replaced by passwordless email codes:
+//   src/lib/auth.ts (HMAC cookie session) + src/lib/auth-actions.ts (send/verify)
+// Identity now resolves against contrib `Members.EmailAddress` via Prisma.
+// Do not reintroduce a password path here.
 
 export async function checkVnocMemberExist(email: string): Promise<boolean> {
   const data = await fetchJSON<{ data: { exists: boolean } }>(

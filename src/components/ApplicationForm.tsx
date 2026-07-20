@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import LoginModal from './LoginModal';
 import type { PartnershipType } from '@/lib/types';
 import { PARTNERSHIP_LABELS } from '@/lib/partnerships';
 
@@ -41,7 +40,6 @@ export default function ApplicationForm({
   inviteCode,
 }: ApplicationFormProps) {
   const [step, setStep] = useState(1);
-  const [showLogin, setShowLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [countries, setCountries] = useState<SelectOption[]>([]);
@@ -94,16 +92,6 @@ export default function ApplicationForm({
       .catch(() => {});
   }, [inviteCode]);
 
-  const handleLogin = (userData: Record<string, string>) => {
-    setFormData((prev) => ({
-      ...prev,
-      email: userData.email || prev.email,
-      firstname: userData.firstname || prev.firstname,
-      lastname: userData.lastname || prev.lastname,
-      country: userData.country || prev.country,
-    }));
-    setStep(2);
-  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -225,13 +213,12 @@ export default function ApplicationForm({
               >
                 Continue
               </button>
-              <button
-                type="button"
-                onClick={() => setShowLogin(true)}
-                className="flex-1 bg-[#1A2420] text-white border border-[#2A3D32] py-3.5 px-4 rounded-xl hover:bg-[#223029] transition-all font-semibold"
+              <a
+                href={`/login?next=${encodeURIComponent(`/apply?type=${partnershipType}`)}`}
+                className="flex-1 bg-[#1A2420] text-white border border-[#2A3D32] py-3.5 px-4 rounded-xl hover:bg-[#223029] transition-all font-semibold text-center"
               >
-                Sign In with Contrib
-              </button>
+                Sign in
+              </a>
             </div>
           </div>
         )}
@@ -343,8 +330,6 @@ export default function ApplicationForm({
           </div>
         )}
       </form>
-
-      <LoginModal isOpen={showLogin} onClose={() => setShowLogin(false)} onLogin={handleLogin} />
     </div>
   );
 }
