@@ -83,20 +83,26 @@ model MarketPartnership {
 
 /// General partnership applications (intake). 1,323 rows, ~1,308 unreviewed.
 model IPartner {
-  ipartner_id       Int       @id
-  firstname         String?   @db.VarChar(255)
-  lastname          String?   @db.VarChar(255)
-  email             String?   @db.VarChar(255)
-  phone             String?   @db.VarChar(255)
-  linkedin          String?   @db.VarChar(255)
-  employer          String?   @db.VarChar(255)
-  location          String?   @db.VarChar(255)
-  domain_name       String?   @db.VarChar(255)
-  industry          String?   @db.VarChar(255)
-  partnership_goals String?   @db.Text
-  concept_ideas     String?   @db.Text
-  status            Int?      @db.TinyInt
-  date_submitted    DateTime?
+  ipartner_id        Int       @id @default(autoincrement())
+  firstname          String?   @db.VarChar(25)
+  lastname           String?   @db.VarChar(25)
+  email              String?   @db.VarChar(50)
+  phone              String?   @db.VarChar(25)
+  linkedin           String?   @db.VarChar(100)
+  employer           String?   @db.VarChar(100)
+  location           String?   @db.VarChar(255)
+  domain_name        String?   @db.VarChar(50)
+  industry           String?   @db.VarChar(50)
+  time_commitment    String?   @db.VarChar(25)
+  areas_of_expertise String?   @db.Text
+  concept_ideas      String?   @db.Text
+  resources          String?   @db.Text
+  partnership_goals  String?   @db.Text
+  business_advice    String?   @db.Text
+  resources_needed   String?   @db.Text
+  expectations       String?   @db.Text
+  status             Int?      @db.TinyInt
+  date_submitted     DateTime?
 
   @@map("IPartner")
 }

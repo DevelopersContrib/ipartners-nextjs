@@ -5,15 +5,21 @@ import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 // VNOC pattern). In dev, with no AWS creds, it logs instead of sending so the
 // sign-in flow still works locally.
 
+let cachedClient: SESClient | null = null;
+
 function getClient(): SESClient | null {
   if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) return null;
-  return new SESClient({
-    region: process.env.AWS_REGION || "us-west-2",
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
+  const region = process.env.AWS_REGION || "us-west-2";
+  if (!cachedClient) {
+    cachedClient = new SESClient({
+      region,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      },
+    });
+  }
+  return cachedClient;
 }
 
 /** Crude HTML → text for the plain-text part. */
@@ -30,26 +36,46 @@ export function htmlToText(html: string): string {
     .trim();
 }
 
-export async function sendEmail(opts: {
-  to: string;
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export interface SendEmailArgs {
+  to: string | string[];
   subject: string;
   html: string;
   text?: string;
   from?: string;
-}): Promise<{ sent: boolean }> {
-  const client = getClient();
+  replyTo?: string | string[];
+}
+
+export async function sendEmail(
+  opts: SendEmailArgs,
+): Promise<{ sent: boolean; messageId?: string }> {
   const from = opts.from || process.env.SES_FROM_EMAIL || "no-reply@ipartners.com";
+  const client = getClient();
+  const toList = Array.isArray(opts.to) ? opts.to : [opts.to];
 
   if (!client) {
-    console.log(`[ses] (dev, not sent) "${opts.subject}" → ${opts.to}`);
+    console.log(`[ses] (dev, not sent) "${opts.subject}" → ${toList.join(", ")}`);
     return { sent: false };
   }
 
   try {
-    await client.send(
+    const res = await client.send(
       new SendEmailCommand({
         Source: from,
-        Destination: { ToAddresses: [opts.to] },
+        Destination: { ToAddresses: toList },
+        ReplyToAddresses: opts.replyTo
+          ? Array.isArray(opts.replyTo)
+            ? opts.replyTo
+            : [opts.replyTo]
+          : undefined,
         Message: {
           Subject: { Data: opts.subject, Charset: "UTF-8" },
           Body: {
@@ -59,7 +85,7 @@ export async function sendEmail(opts: {
         },
       }),
     );
-    return { sent: true };
+    return { sent: true, messageId: res.MessageId };
   } catch (e) {
     console.error("[ses] send failed:", e);
     return { sent: false };
