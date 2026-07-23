@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { PartnershipType } from '@/lib/types';
 import { PARTNERSHIP_LABELS } from '@/lib/partnerships';
+import type { EngagementMode } from '@/lib/engagement-modes';
 
 interface ApplicationFormProps {
   partnershipType: PartnershipType;
@@ -22,6 +23,9 @@ interface ApplicationFormProps {
     country?: string;
     industry?: string;
   };
+  engagementMode?: EngagementMode;
+  vertical?: string;
+  tier?: string;
 }
 
 interface FormData {
@@ -71,6 +75,9 @@ export default function ApplicationForm({
   inviteCode,
   initialEmail = '',
   initialProfile,
+  engagementMode,
+  vertical,
+  tier,
 }: ApplicationFormProps) {
   // If we already know who they are, don't make them retype it — start at Profile.
   const [step, setStep] = useState(initialEmail ? 2 : 1);
@@ -151,6 +158,16 @@ export default function ApplicationForm({
     e.preventDefault();
     setLoading(true);
     try {
+      const referralSource =
+        typeof document !== 'undefined'
+          ? document.cookie
+              .split('; ')
+              .find((r) => r.startsWith('ipp_ref='))
+              ?.split('=')
+              .slice(1)
+              .join('=')
+          : undefined;
+
       const res = await fetch('/api/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -158,6 +175,12 @@ export default function ApplicationForm({
           ...formData,
           partnershipType,
           domain: formData.domain || domain,
+          mode: engagementMode,
+          vertical,
+          tier,
+          referral_source: referralSource
+            ? decodeURIComponent(referralSource)
+            : undefined,
         }),
       });
       const data = await res.json();
@@ -173,15 +196,16 @@ export default function ApplicationForm({
   if (submitted) {
     return (
       <div className="max-w-lg mx-auto text-center py-12 sm:py-16 px-4">
-        <div className="bg-green-500/10 border border-green-500/20 rounded-3xl p-8 sm:p-10">
-          <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <svg className="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-white border border-[var(--ipp-primary)]/15 rounded-2xl p-8 sm:p-10 shadow-sm">
+          <div className="w-16 h-16 bg-[var(--ipp-accent)]/15 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <svg className="h-8 w-8 text-[var(--ipp-accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3">Application Submitted!</h2>
-          <p className="text-[#8B9E93] leading-relaxed">
-            Thank you for applying for a {PARTNERSHIP_LABELS[partnershipType]}.
+          <h2 className="text-2xl font-bold text-[var(--ipp-text)] mb-3">Application Submitted!</h2>
+          <p className="text-[var(--ipp-secondary)] leading-relaxed">
+            Thank you for applying
+            {engagementMode === 'sponsor' ? ' as a sponsor' : ` for a ${PARTNERSHIP_LABELS[partnershipType]}`}.
             We&apos;ll review your application and get back to you soon.
           </p>
         </div>
@@ -190,12 +214,15 @@ export default function ApplicationForm({
   }
 
   const inputClass =
-    'w-full px-4 py-3 border border-[#1E2D25] rounded-xl bg-[#0A0F0D] focus:bg-[#0D1210] text-white text-base transition-colors placeholder:text-[#5A6E62]';
-  const labelClass = 'block text-sm font-medium text-[#8B9E93] mb-1.5';
+    'w-full px-4 py-3 border border-[var(--ipp-primary)]/20 rounded-xl bg-white focus:border-[var(--ipp-accent)] focus:outline-none text-[var(--ipp-text)] text-base transition-colors placeholder:text-[var(--ipp-secondary)]/60';
+  const labelClass = 'block text-sm font-medium text-[var(--ipp-secondary)] mb-1.5';
+  const btnPrimary =
+    'flex-1 bg-[var(--ipp-accent)] text-white py-3.5 px-4 rounded-xl hover:opacity-90 transition-all font-semibold disabled:opacity-50';
+  const btnSecondary =
+    'flex-1 bg-white text-[var(--ipp-text)] border border-[var(--ipp-primary)]/20 py-3.5 px-4 rounded-xl hover:bg-[var(--ipp-bg)] transition-all font-semibold text-center';
 
   return (
     <div className="max-w-xl mx-auto px-4 sm:px-0">
-      {/* Progress Steps */}
       <div className="flex items-center justify-between mb-10 max-w-xs mx-auto">
         {steps.map((s, i) => (
           <div key={s.num} className="flex items-center">
@@ -203,8 +230,8 @@ export default function ApplicationForm({
               <div
                 className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center font-bold text-sm transition-all duration-300 ${
                   step >= s.num
-                    ? 'bg-green-600 text-white shadow-md shadow-green-600/20'
-                    : 'bg-[#1A2420] text-[#5A6E62]'
+                    ? 'bg-[var(--ipp-primary)] text-white'
+                    : 'bg-[var(--ipp-primary)]/10 text-[var(--ipp-secondary)]'
                 }`}
               >
                 {step > s.num ? (
@@ -215,30 +242,29 @@ export default function ApplicationForm({
                   s.num
                 )}
               </div>
-              <span className={`text-xs mt-1.5 font-medium ${step >= s.num ? 'text-green-400' : 'text-[#5A6E62]'}`}>
+              <span className={`text-xs mt-1.5 font-medium ${step >= s.num ? 'text-[var(--ipp-primary)]' : 'text-[var(--ipp-secondary)]'}`}>
                 {s.label}
               </span>
             </div>
             {i < steps.length - 1 && (
               <div className={`w-12 sm:w-16 h-0.5 mx-2 mb-5 rounded-full transition-colors duration-300 ${
-                step > s.num ? 'bg-green-600' : 'bg-[#1E2D25]'
+                step > s.num ? 'bg-[var(--ipp-primary)]' : 'bg-[var(--ipp-primary)]/15'
               }`} />
             )}
           </div>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-[#111916] rounded-2xl shadow-xl border border-[#1E2D25] p-6 sm:p-8">
-        <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
-          {PARTNERSHIP_LABELS[partnershipType]}
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-[var(--ipp-primary)]/10 p-6 sm:p-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--ipp-text)] mb-1">
+          {engagementMode === 'sponsor' ? 'Sponsor interest' : PARTNERSHIP_LABELS[partnershipType]}
         </h2>
-        <p className="text-sm text-[#5A6E62] mb-7">Step {step} of 3</p>
+        <p className="text-sm text-[var(--ipp-secondary)] mb-7">Step {step} of 3</p>
 
-        {/* Step 1 */}
         {step === 1 && (
           <div className="space-y-5">
-            <p className="text-[#8B9E93] text-sm leading-relaxed">
-              Enter your email to get started. Already have a Contrib account? Sign in to pre-fill your information.
+            <p className="text-[var(--ipp-secondary)] text-sm leading-relaxed">
+              Enter your email to get started. Already have an account? Sign in to pre-fill your information.
             </p>
             <div>
               <label htmlFor="email" className={labelClass}>Email Address *</label>
@@ -254,16 +280,12 @@ export default function ApplicationForm({
               />
             </div>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="flex-1 bg-green-600 text-white py-3.5 px-4 rounded-xl hover:bg-green-500 transition-all font-semibold shadow-md shadow-green-600/20"
-              >
+              <button type="button" onClick={() => setStep(2)} className={btnPrimary}>
                 Continue
               </button>
               <a
-                href={`/login?next=${encodeURIComponent(`/apply?type=${partnershipType}`)}`}
-                className="flex-1 bg-[#1A2420] text-white border border-[#2A3D32] py-3.5 px-4 rounded-xl hover:bg-[#223029] transition-all font-semibold text-center"
+                href={`/login?next=${encodeURIComponent(`/apply?type=${partnershipType}${engagementMode ? `&mode=${engagementMode}` : ''}`)}`}
+                className={btnSecondary}
               >
                 Sign in
               </a>
@@ -271,7 +293,6 @@ export default function ApplicationForm({
           </div>
         )}
 
-        {/* Step 2 */}
         {step === 2 && (
           <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -291,24 +312,25 @@ export default function ApplicationForm({
                 {countries.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-            {partnershipType === 'domain' && (
+            {(partnershipType === 'domain' || engagementMode === 'sponsor') && (
               <div>
-                <label htmlFor="domain" className={labelClass}>Domain Name</label>
+                <label htmlFor="domain" className={labelClass}>
+                  {engagementMode === 'sponsor' ? 'Company or site (optional)' : 'Domain Name'}
+                </label>
                 <input id="domain" name="domain" type="text" value={formData.domain} onChange={handleChange} className={inputClass} placeholder="example.com" />
               </div>
             )}
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => setStep(1)} className="flex-1 bg-[#1A2420] text-white border border-[#2A3D32] py-3.5 px-4 rounded-xl hover:bg-[#223029] transition-all font-semibold">
+              <button type="button" onClick={() => setStep(1)} className={btnSecondary}>
                 Back
               </button>
-              <button type="button" onClick={() => setStep(3)} className="flex-1 bg-green-600 text-white py-3.5 px-4 rounded-xl hover:bg-green-500 transition-all font-semibold shadow-md shadow-green-600/20">
+              <button type="button" onClick={() => setStep(3)} className={btnPrimary}>
                 Next
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 3 */}
         {step === 3 && (
           <div className="space-y-5">
             <div>
@@ -354,14 +376,10 @@ export default function ApplicationForm({
               />
             </div>
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => setStep(2)} className="flex-1 bg-[#1A2420] text-white border border-[#2A3D32] py-3.5 px-4 rounded-xl hover:bg-[#223029] transition-all font-semibold">
+              <button type="button" onClick={() => setStep(2)} className={btnSecondary}>
                 Back
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-green-600 text-white py-3.5 px-4 rounded-xl hover:bg-green-500 disabled:bg-green-800 transition-all font-semibold shadow-md shadow-green-600/20"
-              >
+              <button type="submit" disabled={loading} className={btnPrimary}>
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">

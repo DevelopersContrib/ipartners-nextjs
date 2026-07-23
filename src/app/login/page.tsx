@@ -7,9 +7,13 @@ import LoginForm from "./LoginForm";
 
 export const dynamic = "force-dynamic";
 
+const LOGO_URL =
+  process.env.NEXT_PUBLIC_LOGO_URL ||
+  "https://d2qcctj8epnr7y.cloudfront.net/images/2013/logo-Ipartner1.png";
+
 export const metadata: Metadata = {
-  title: "Sign in — iPartners",
-  description: "Sign in to your iPartners account to manage your partnerships.",
+  title: "Login — iPartner",
+  description: "Sign in to your iPartner account with an email code.",
   robots: { index: false },
 };
 
@@ -23,31 +27,31 @@ export default async function LoginPage({
   if (partner) redirect(next && next.startsWith("/") ? next : "/portal");
 
   return (
-    <main className="min-h-screen bg-[#0A0F0D] flex items-center justify-center px-4 py-16">
+    <main className="min-h-screen bg-[var(--ipp-bg)] flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-white tracking-tight">
-            iPartners
+          <Link href="/" className="inline-flex justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={LOGO_URL} alt="iPartner" className="h-10 sm:h-12 w-auto" />
           </Link>
-          <p className="text-[#5A6E62] text-sm mt-2">Manage your partnerships</p>
+          <p className="text-[var(--ipp-secondary)] text-sm mt-3">Manage your partnerships</p>
         </div>
 
-        <div className="bg-[#111916] border border-[#1E2D25] rounded-2xl p-6 sm:p-8">
-          <h1 className="text-xl font-bold text-white mb-1">Sign in</h1>
-          <p className="text-sm text-[#5A6E62] mb-6">
-            Use the email you applied with — we&apos;ll find your applications and partnerships.
+        <div className="bg-white border border-[var(--border)] rounded-2xl p-6 sm:p-8">
+          <h1 className="text-xl font-bold text-[var(--ipp-text)] mb-1">Login</h1>
+          <p className="text-sm text-[var(--ipp-secondary)] mb-6">
+            We&apos;ll email a 6-digit code. No password needed.
           </p>
-          <Suspense fallback={<p className="text-[#5A6E62] text-sm">Loading…</p>}>
+          <Suspense fallback={<p className="text-[var(--ipp-secondary)] text-sm">Loading…</p>}>
             <LoginForm />
           </Suspense>
         </div>
 
-        <p className="text-center text-xs text-[#5A6E62] mt-6">
+        <p className="text-center text-xs text-[var(--ipp-secondary)] mt-6">
           New here?{" "}
-          <Link href="/apply" className="text-[#8B9E93] underline underline-offset-4">
+          <Link href="/apply#apply-form" className="text-[var(--ipp-primary)] underline underline-offset-4">
             Apply for a partnership
-          </Link>{" "}
-          — you can sign in afterwards to track it.
+          </Link>
         </p>
       </div>
     </main>

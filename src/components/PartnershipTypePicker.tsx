@@ -20,21 +20,21 @@ export default function PartnershipTypePicker({ value, onChange }: PartnershipTy
             onClick={() => onChange(opt.type)}
             className={`text-left rounded-xl border p-4 transition-all ${
               selected
-                ? 'border-green-500 bg-green-500/10 shadow-md shadow-green-600/10'
-                : 'border-[#1E2D25] bg-[#0A0F0D] hover:border-[#2A3D32]'
+                ? 'border-[var(--ipp-accent)] bg-[var(--ipp-accent)]/10'
+                : 'border-[var(--ipp-primary)]/15 bg-white hover:border-[var(--ipp-primary)]/30'
             }`}
           >
             <div className="flex items-start justify-between gap-2">
-              <span className={`font-semibold ${selected ? 'text-green-400' : 'text-white'}`}>
+              <span className={`font-semibold ${selected ? 'text-[var(--ipp-primary)]' : 'text-[var(--ipp-text)]'}`}>
                 {PARTNERSHIP_LABELS[opt.type]}
               </span>
               {selected && (
-                <span className="text-xs font-medium text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-medium text-[var(--ipp-accent)] bg-[var(--ipp-accent)]/15 px-2 py-0.5 rounded-full">
                   Selected
                 </span>
               )}
             </div>
-            <p className="text-sm text-[#5A6E62] mt-1.5 leading-relaxed">{opt.description}</p>
+            <p className="text-sm text-[var(--ipp-secondary)] mt-1.5 leading-relaxed">{opt.description}</p>
           </button>
         );
       })}

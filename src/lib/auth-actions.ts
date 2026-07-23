@@ -11,8 +11,58 @@ function safeNext(raw: unknown): string {
   return n.startsWith("/") ? n : "/portal";
 }
 
-// Step 1 — email → send a 6-digit code.
-export async function requestAuthCode(_prev: unknown, formData: FormData) {
+async function finishIssue(opts: {
+  email: string;
+  next: string;
+  code: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  subject: string;
+  html: string;
+}) {
+  const since = new Date(Date.now() - 15 * 60 * 1000);
+  const recent = await prisma.ippAuthCode.count({
+    where: { email: opts.email, createdAt: { gt: since } },
+  });
+  if (recent >= 5) {
+    return { ok: false as const, error: "Too many requests. Wait a few minutes and try again." };
+  }
+
+  await prisma.ippAuthCode.updateMany({
+    where: { email: opts.email, consumed: false },
+    data: { consumed: true },
+  });
+
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  await prisma.ippAuthCode.create({
+    data: {
+      token: randomToken(),
+      email: opts.email,
+      code: opts.code,
+      next: opts.next,
+      firstName: opts.firstName || null,
+      lastName: opts.lastName || null,
+      company: opts.company || null,
+      expiresAt,
+    },
+  });
+
+  const { sent } = await sendEmail({
+    to: opts.email,
+    subject: opts.subject,
+    html: opts.html,
+  });
+
+  const devCode = !sent && process.env.NODE_ENV !== "production" ? opts.code : undefined;
+  if (!sent && !devCode) {
+    return { ok: false as const, error: "We couldn't send your code. Please try again." };
+  }
+  return { ok: true as const, email: opts.email, next: opts.next, devCode };
+}
+
+/** Sign in — email only. */
+export async function requestSignInCode(_prev: unknown, formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const next = safeNext(formData.get("next"));
 
@@ -20,35 +70,22 @@ export async function requestAuthCode(_prev: unknown, formData: FormData) {
     return { ok: false as const, error: "Enter a valid email address." };
   }
 
-  // Rate limit: 5 requests per email per 15 minutes.
-  const since = new Date(Date.now() - 15 * 60 * 1000);
-  const recent = await prisma.ippAuthCode.count({ where: { email, createdAt: { gt: since } } });
-  if (recent >= 5) {
-    return { ok: false as const, error: "Too many requests. Wait a few minutes and try again." };
-  }
-
-  // Invalidate outstanding codes for this email.
-  await prisma.ippAuthCode.updateMany({ where: { email, consumed: false }, data: { consumed: true } });
-
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-  await prisma.ippAuthCode.create({ data: { token: randomToken(), email, code, next, expiresAt } });
-
-  const { sent } = await sendEmail({
-    to: email,
-    subject: `${code} is your iPartners sign-in code`,
-    html: codeEmail(code),
+  return finishIssue({
+    email,
+    next,
+    code,
+    subject: `${code} is your iPartner sign-in code`,
+    html: codeEmail(code, "sign-in"),
   });
-
-  // In dev (no SES creds) surface the code so sign-in still works locally.
-  const devCode = !sent && process.env.NODE_ENV !== "production" ? code : undefined;
-  if (!sent && !devCode) {
-    return { ok: false as const, error: "We couldn't send your code. Please try again." };
-  }
-  return { ok: true as const, email, next, devCode };
 }
 
-// Step 2 — email + code → session.
+/** Alias kept for LoginForm. */
+export async function requestAuthCode(_prev: unknown, formData: FormData) {
+  return requestSignInCode(_prev, formData);
+}
+
+// Step 2 — email + code → session (+ create ipp_partners when the code carried a name).
 export async function verifyAuthCode(_prev: unknown, formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const code = String(formData.get("code") || "").replace(/\D/g, "").slice(0, 6);
@@ -80,6 +117,25 @@ export async function verifyAuthCode(_prev: unknown, formData: FormData) {
   }
 
   await prisma.ippAuthCode.update({ where: { token: record.token }, data: { consumed: true } });
+
+  // Signup codes carry a name — persist the partner profile before the session lands.
+  if (record.firstName && record.lastName) {
+    await prisma.ippPartner.upsert({
+      where: { email },
+      create: {
+        email,
+        firstName: record.firstName,
+        lastName: record.lastName,
+        company: record.company,
+      },
+      update: {
+        firstName: record.firstName,
+        lastName: record.lastName,
+        company: record.company,
+      },
+    });
+  }
+
   await createSession(email);
   redirect(next);
 }
@@ -89,14 +145,23 @@ export async function logout() {
   redirect("/");
 }
 
-/** On-brand sign-in email (dark iPartners palette). */
-function codeEmail(code: string): string {
+/** On-brand verification email (dark iPartners palette). */
+function codeEmail(code: string, kind: "sign-in" | "verify"): string {
+  const title = kind === "verify" ? "Your verification code" : "Your sign-in code";
+  const blurb =
+    kind === "verify"
+      ? "Enter this code to finish verifying your iPartner account. It expires in 10 minutes."
+      : "Enter this code to access your iPartner account. It expires in 10 minutes.";
+  const logo =
+    process.env.NEXT_PUBLIC_LOGO_URL ||
+    "https://d2qcctj8epnr7y.cloudfront.net/images/2013/logo-Ipartner1.png";
   return `
   <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0A0F0D;padding:32px">
     <div style="max-width:480px;margin:0 auto;background:#111916;border:1px solid #1E2D25;border-radius:16px;overflow:hidden">
-      <div style="padding:28px 28px 8px">
-        <h1 style="color:#fff;font-size:20px;margin:0 0 6px">Your sign-in code</h1>
-        <p style="color:#8B9E93;font-size:14px;margin:0">Enter this code to access your iPartners account. It expires in 10 minutes.</p>
+      <div style="padding:28px 28px 8px;text-align:center">
+        <img src="${logo}" alt="iPartner" height="40" style="height:40px;width:auto;margin:0 auto 16px;display:block" />
+        <h1 style="color:#fff;font-size:20px;margin:0 0 6px">${title}</h1>
+        <p style="color:#8B9E93;font-size:14px;margin:0">${blurb}</p>
       </div>
       <div style="padding:16px 28px 28px">
         <div style="background:#0A0F0D;border:1px solid #2A3D32;border-radius:12px;padding:18px;text-align:center;
@@ -108,6 +173,6 @@ function codeEmail(code: string): string {
         </p>
       </div>
     </div>
-    <p style="color:#5A6E62;font-size:11px;text-align:center;margin:16px 0 0">iPartners — a VNOC venture</p>
+    <p style="color:#5A6E62;font-size:11px;text-align:center;margin:16px 0 0">iPartner — a VNOC venture</p>
   </div>`;
 }

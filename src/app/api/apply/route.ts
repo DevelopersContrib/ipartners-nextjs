@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { coerceMode, createEngagement } from '@/lib/engagements';
+import { normalizeInboundRef } from '@/lib/inbound-platforms';
 
 const INGEST_URL =
   process.env.VNOC_PARTNERSHIP_INGEST_URL?.trim() ||
@@ -33,12 +35,16 @@ export async function POST(req: NextRequest) {
   }
 
   const partnershipType = String(body.partnershipType ?? 'domain') as PartnershipType;
+  const referralSource = normalizeInboundRef(
+    String(body.referral_source ?? body.ref ?? ''),
+  );
   const messageParts = [
     body.message ? String(body.message) : '',
     body.intention ? `Intention: ${body.intention}` : '',
     body.experience ? `Experience: ${body.experience}` : '',
     body.role ? `Role: ${body.role}` : '',
     `Partnership type: ${partnershipType}`,
+    referralSource ? `Referred from: ${referralSource}` : '',
   ].filter(Boolean);
 
   if (!INGEST_KEY) {
@@ -65,7 +71,10 @@ export async function POST(req: NextRequest) {
         location: body.country ? String(body.country) : null,
         channel: 'ipartner',
         partnership_type: partnershipType,
-        source: `ipartners.com:${partnershipType}`,
+        source: referralSource
+          ? `ipartners.com:${partnershipType}:ref:${referralSource}`
+          : `ipartners.com:${partnershipType}`,
+        referral_source: referralSource,
       }),
     });
 
@@ -77,9 +86,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const mode =
+      coerceMode(String(body.mode ?? '')) ||
+      coerceMode(partnershipType) ||
+      'builder';
+    const vertical = body.vertical ? String(body.vertical).trim() : '';
+    const tier = body.tier ? String(body.tier).trim().toLowerCase() : null;
+    const ipartnerId = (data as { ipartner_id?: number }).ipartner_id;
+
+    try {
+      await createEngagement({
+        email,
+        mode,
+        scopeType: vertical ? 'vertical' : 'domain',
+        scopeValue: vertical || domain,
+        status: 'pending',
+        tier: mode === 'sponsor' ? tier : null,
+        ...(ipartnerId != null
+          ? { sourceTable: 'IPartner' as const, sourceId: ipartnerId }
+          : {}),
+      });
+    } catch (engErr) {
+      console.error('[api/apply] engagement write failed:', engErr);
+    }
+
     return NextResponse.json({
       success: true,
-      ipartner_id: (data as { ipartner_id?: number }).ipartner_id,
+      ipartner_id: ipartnerId,
     });
   } catch (err) {
     console.error('[api/apply]', err);

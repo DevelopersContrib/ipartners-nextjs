@@ -67,21 +67,28 @@ export async function getCurrentPartner(): Promise<PartnerSession | null> {
   if (!email) return null;
 
   try {
-    const member = await prisma.members.findFirst({
-      where: { EmailAddress: email },
-      select: {
-        MemberId: true,
-        FirstName: true,
-        LastName: true,
-        CompanyName: true,
-      },
-    });
+    const [member, local] = await Promise.all([
+      prisma.members.findFirst({
+        where: { EmailAddress: email },
+        select: {
+          MemberId: true,
+          FirstName: true,
+          LastName: true,
+          CompanyName: true,
+        },
+      }),
+      // Brand-new signups live here until/unless they also exist in Members.
+      prisma.ippPartner.findUnique({
+        where: { email },
+        select: { firstName: true, lastName: true, company: true },
+      }),
+    ]);
     return {
       email,
       memberId: member?.MemberId ?? null,
-      firstName: member?.FirstName ?? null,
-      lastName: member?.LastName ?? null,
-      company: member?.CompanyName ?? null,
+      firstName: member?.FirstName ?? local?.firstName ?? null,
+      lastName: member?.LastName ?? local?.lastName ?? null,
+      company: member?.CompanyName ?? local?.company ?? null,
     };
   } catch {
     // DB hiccup shouldn't log the user out.

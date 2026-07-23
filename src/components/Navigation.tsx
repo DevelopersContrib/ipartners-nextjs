@@ -7,10 +7,11 @@ import { usePathname } from 'next/navigation';
 const LOGO_URL = process.env.NEXT_PUBLIC_LOGO_URL || 'https://d2qcctj8epnr7y.cloudfront.net/images/2013/logo-Ipartner1.png';
 
 const navLinks = [
-  { href: '/domain', label: 'Domains', mobileLabel: 'Domain Partnerships' },
-  { href: '/apps', label: 'Apps', mobileLabel: 'App Partnerships' },
-  { href: '/leaders', label: 'Leaders', mobileLabel: 'Leader Partnerships' },
-  { href: '/product-service', label: 'Products', mobileLabel: 'Products/Services' },
+  { href: '/verticals', label: 'Verticals', mobileLabel: 'Browse verticals' },
+  { href: '/match', label: 'Match', mobileLabel: 'Free partner match' },
+  { href: '/apply?mode=sponsor', label: 'Sponsor', mobileLabel: 'Sponsor a category' },
+  { href: '/apply', label: 'Partner', mobileLabel: 'Partner on a domain' },
+  { href: '/referrals', label: 'Referrals', mobileLabel: 'Referral program' },
   { href: '/about', label: 'About', mobileLabel: 'About Us' },
   { href: '/contact', label: 'Contact', mobileLabel: 'Contact Us' },
 ];
@@ -34,70 +35,61 @@ export default function Navigation() {
   }, [mobileOpen]);
 
   const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
-    return pathname.startsWith(href);
+    const path = href.split('?')[0] || href;
+    if (path === '/') return pathname === '/';
+    return pathname.startsWith(path);
   };
 
   return (
     <>
       <nav
-        className={`bg-[#0A0F0D]/95 backdrop-blur-md sticky top-0 z-50 border-b transition-all duration-300 ${
-          scrolled ? 'border-[#1E2D25] shadow-lg shadow-black/20' : 'border-transparent'
+        className={`sticky top-0 z-50 border-b transition-all duration-300 ${
+          scrolled ? 'bg-[var(--ipp-bg)]/95 backdrop-blur-md border-[var(--border)] shadow-sm' : 'bg-[var(--ipp-bg)] border-transparent'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 lg:h-18">
-            {/* Logo */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[env(safe-area-inset-top)]">
+          <div className="flex justify-between h-14 sm:h-16 lg:h-18">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="flex items-center gap-2 group">
+              <Link href="/" className="flex items-center gap-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={LOGO_URL}
-                  alt="iPartner"
-                  className="h-8 sm:h-9 w-auto"
-                />
+                <img src={LOGO_URL} alt="iPartner" className="h-8 sm:h-9 w-auto" />
               </Link>
             </div>
 
-            {/* Desktop nav */}
             <div className="hidden lg:flex lg:items-center lg:gap-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative px-3 xl:px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  className={`px-3 xl:px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                     isActive(link.href)
-                      ? 'text-green-400 bg-green-500/10'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'text-[var(--ipp-primary)] bg-white'
+                      : 'text-[var(--ipp-secondary)] hover:text-[var(--ipp-text)] hover:bg-white/70'
                   }`}
                 >
                   {link.label}
-                  {isActive(link.href) && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-green-500 rounded-full" />
-                  )}
                 </Link>
               ))}
               <Link
-                href="/domain/apply#apply-form"
-                className="ml-3 bg-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-500 active:bg-green-700 transition-all shadow-md shadow-green-600/20 hover:shadow-lg hover:shadow-green-500/25"
+                href="/login"
+                className="ml-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-[var(--ipp-accent)] text-[var(--ipp-text)] hover:brightness-105 transition"
               >
-                Apply Now
+                Login
               </Link>
             </div>
 
-            {/* Mobile menu button */}
             <div className="flex items-center lg:hidden">
               <button
                 type="button"
-                className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                className="inline-flex items-center justify-center w-11 h-11 rounded-xl text-[var(--ipp-secondary)] hover:bg-white/70"
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-expanded={mobileOpen}
                 aria-label="Toggle menu"
               >
                 <div className="w-5 flex flex-col gap-1.5 items-center">
-                  <span className={`block w-5 h-0.5 bg-current rounded-full transition-all duration-300 ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`} />
-                  <span className={`block w-5 h-0.5 bg-current rounded-full transition-all duration-300 ${mobileOpen ? 'opacity-0 scale-0' : ''}`} />
-                  <span className={`block w-5 h-0.5 bg-current rounded-full transition-all duration-300 ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+                  <span className={`block w-5 h-0.5 bg-current rounded-full transition-all ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`} />
+                  <span className={`block w-5 h-0.5 bg-current rounded-full transition-all ${mobileOpen ? 'opacity-0 scale-0' : ''}`} />
+                  <span className={`block w-5 h-0.5 bg-current rounded-full transition-all ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`} />
                 </div>
               </button>
             </div>
@@ -105,49 +97,49 @@ export default function Navigation() {
         </div>
       </nav>
 
-      {/* Mobile menu overlay */}
       <div className={`fixed inset-0 z-40 lg:hidden transition-all duration-300 ${mobileOpen ? 'visible' : 'invisible'}`}>
         <div
-          className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${mobileOpen ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 bg-[var(--ipp-text)]/40 transition-opacity ${mobileOpen ? 'opacity-100' : 'opacity-0'}`}
           onClick={() => setMobileOpen(false)}
         />
-        <div className={`absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-[#111916] shadow-2xl shadow-black/50 transform transition-transform duration-300 ease-out ${mobileOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-          <div className="flex items-center justify-between px-6 h-16 border-b border-[#1E2D25]">
-            <span className="text-lg font-bold text-white">Menu</span>
+        <div className={`absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-xl transform transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="flex items-center justify-between px-6 h-16 border-b border-[var(--border)]">
+            <span className="text-lg font-bold text-[var(--ipp-text)]">Menu</span>
             <button
               onClick={() => setMobileOpen(false)}
-              className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded-xl text-[var(--ipp-secondary)]"
+              aria-label="Close menu"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              ✕
             </button>
           </div>
-          <div className="px-4 py-4 space-y-1 overflow-y-auto max-h-[calc(100vh-160px)]">
+          <div className="px-4 py-4 space-y-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center px-4 py-3.5 rounded-xl text-base font-medium transition-all duration-200 ${
-                  isActive(link.href)
-                    ? 'text-green-400 bg-green-500/10'
-                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                className={`flex items-center px-4 py-3.5 rounded-xl text-base font-medium ${
+                  isActive(link.href) ? 'text-[var(--ipp-primary)] bg-[var(--ipp-bg)]' : 'text-[var(--ipp-text)]'
                 }`}
               >
                 {link.mobileLabel}
-                {isActive(link.href) && (
-                  <span className="ml-auto w-2 h-2 bg-green-500 rounded-full" />
-                )}
               </Link>
             ))}
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[#1E2D25] bg-[#111916]">
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[var(--border)] space-y-2 bg-white">
             <Link
-              href="/domain/apply#apply-form"
-              className="flex items-center justify-center w-full bg-green-600 text-white py-3.5 rounded-xl text-base font-semibold hover:bg-green-500 transition-colors shadow-lg shadow-green-600/20"
+              href="/login"
+              className="flex items-center justify-center w-full min-h-12 bg-[var(--ipp-accent)] text-[var(--ipp-text)] py-3 rounded-xl text-sm font-semibold"
               onClick={() => setMobileOpen(false)}
             >
-              Apply for Partnership
+              Login
+            </Link>
+            <Link
+              href="/apply"
+              className="flex items-center justify-center w-full min-h-12 bg-[var(--ipp-primary)] text-white py-3 rounded-xl text-sm font-semibold"
+              onClick={() => setMobileOpen(false)}
+            >
+              Apply
             </Link>
           </div>
         </div>

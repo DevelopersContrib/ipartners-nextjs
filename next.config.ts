@@ -16,6 +16,22 @@ const nextConfig: NextConfig = {
         protocol: "http",
         hostname: "www.contrib.com",
       },
+      {
+        protocol: "https",
+        hostname: "images.pexels.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.brandidentity.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.vnoc.com",
+      },
+      {
+        protocol: "https",
+        hostname: "vnoclogos.s3-us-west-1.amazonaws.com",
+      },
     ],
   },
 

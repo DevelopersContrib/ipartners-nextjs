@@ -29,7 +29,7 @@ export type PartnerProfile = {
   industry: string;
   phone: string;
   /** Where we found the richest data (for debugging / telemetry). */
-  source: "application" | "member" | "none";
+  source: "application" | "member" | "signup" | "none";
 };
 
 const s = (v: unknown) => (v == null ? "" : String(v).trim());
@@ -49,10 +49,14 @@ export async function getPartnerProfile(email: string): Promise<PartnerProfile> 
   if (!e) return empty;
 
   try {
-    const [member, general, domain, appLeader, product, venture] = await Promise.all([
+    const [member, local, general, domain, appLeader, product, venture] = await Promise.all([
       prisma.members.findFirst({
         where: { EmailAddress: e },
         select: { FirstName: true, LastName: true, CompanyName: true, Country: true },
+      }),
+      prisma.ippPartner.findUnique({
+        where: { email: e },
+        select: { firstName: true, lastName: true, company: true },
       }),
       prisma.iPartner.findFirst({
         where: { email: e },
@@ -89,13 +93,15 @@ export async function getPartnerProfile(email: string): Promise<PartnerProfile> 
 
     const firstname = pick(
       general?.firstname, domain?.first_name, appLeader?.fname, product?.fname, venture?.fname,
-      member?.FirstName,
+      member?.FirstName, local?.firstName,
     );
     const lastname = pick(
       general?.lastname, domain?.last_name, appLeader?.lname, product?.lname, venture?.lname,
-      member?.LastName,
+      member?.LastName, local?.lastName,
     );
-    const company = pick(general?.employer, domain?.company, product?.company, member?.CompanyName);
+    const company = pick(
+      general?.employer, domain?.company, product?.company, member?.CompanyName, local?.company,
+    );
     // These columns are NOT NULL ints, so "no answer" is stored as 0 — which
     // would otherwise resolve to a real option id or silently blank the select.
     const id = (n: number | null | undefined) => (n && n > 0 ? String(n) : "");
@@ -108,7 +114,13 @@ export async function getPartnerProfile(email: string): Promise<PartnerProfile> 
     const country = pick(id(domain?.country), member?.Country);
 
     const hasApplication = !!(general || domain || appLeader || product || venture);
-    const source: PartnerProfile["source"] = hasApplication ? "application" : member ? "member" : "none";
+    const source: PartnerProfile["source"] = hasApplication
+      ? "application"
+      : member
+        ? "member"
+        : local
+          ? "signup"
+          : "none";
 
     return { email: e, firstname, lastname, company, country, industry, phone, source };
   } catch (err) {

@@ -16,7 +16,8 @@
     "prisma:migrate": "npm run db:forbidden",
     "prisma:studio": "prisma studio",
     "test:handoff": "tsx --conditions=react-server --env-file=.env scripts/test-handoff.ts",
-    "test-db": "tsx scripts/test-db.ts"
+    "test-db": "tsx scripts/test-db.ts",
+    "backfill:engagements": "tsx --env-file=.env scripts/backfill-engagements.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.109.0",

@@ -5,8 +5,12 @@ import ContinueForm from "./ContinueForm";
 
 export const dynamic = "force-dynamic";
 
+const LOGO_URL =
+  process.env.NEXT_PUBLIC_LOGO_URL ||
+  "https://d2qcctj8epnr7y.cloudfront.net/images/2013/logo-Ipartner1.png";
+
 export const metadata: Metadata = {
-  title: "Continue your application — iPartners",
+  title: "Continue your application — iPartner",
   robots: { index: false, follow: false },
 };
 
@@ -30,8 +34,9 @@ export default async function ContinuePage({
     <main className="min-h-screen bg-[#0A0F0D] flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-white tracking-tight">
-            iPartners
+          <Link href="/" className="inline-flex justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={LOGO_URL} alt="iPartner" className="h-10 sm:h-12 w-auto" />
           </Link>
         </div>
         <div className="bg-[#111916] border border-[#1E2D25] rounded-2xl p-6 sm:p-8">{children}</div>

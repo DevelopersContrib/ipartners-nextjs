@@ -1,160 +1,178 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0A0F0D;
-  --background-secondary: #111916;
-  --background-card: #151D19;
-  --background-elevated: #1A2420;
-  --foreground: #E8F0EC;
-  --foreground-muted: #8B9E93;
-  --foreground-subtle: #5A6E62;
-  --primary: #22C55E;
-  --primary-dark: #16A34A;
-  --primary-darker: #15803D;
-  --primary-light: #4ADE80;
-  --primary-50: #0D2818;
-  --primary-glow: rgba(34, 197, 94, 0.15);
-  --accent: #10B981;
-  --border: #1E2D25;
-  --border-light: #2A3D32;
-  --success: #22C55E;
-  --warning: #EAB308;
-  --error: #EF4444;
+  --ipp-primary: #223843;
+  --ipp-secondary: #476a78;
+  /* Lime accent — matches logo “i” / Claude mock CTAs (not orange) */
+  --ipp-accent: #8bc53f;
+  --ipp-bg: #f9f7f5;
+  --ipp-text: #0f172a;
+
+  --background: var(--ipp-bg);
+  --background-secondary: #ffffff;
+  --background-card: #ffffff;
+  --background-elevated: #ebe6e6;
+  --foreground: var(--ipp-text);
+  --foreground-muted: var(--ipp-secondary);
+  --foreground-subtle: #6b808c;
+  --primary: var(--ipp-primary);
+  --accent: var(--ipp-accent);
+  --border: #d4d0d0;
+  --border-light: #e0dbdb;
+  --success: #2f6f4e;
+  --warning: #f18f01;
+  --error: #c23b3b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-/* Base */
+/* Heading font-family is injected from layout.tsx (Poppins) so it always wins. */
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent iOS zoom jumps; keep layout fluid */
+  text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  overflow-x: hidden;
+  background: var(--ipp-bg);
+  color: var(--ipp-text);
+  overflow-x: clip;
+  min-width: 0;
 }
 
-/* Hero gradients - iPartner dark green brand */
-.hero-gradient {
-  background: linear-gradient(135deg, #030A06 0%, #0A1F12 30%, #0D2818 65%, #15803D 100%);
-}
-
-.hero-gradient-green {
-  background: linear-gradient(135deg, #021A0B 0%, #064E3B 50%, #059669 100%);
-}
-
-.hero-gradient-purple {
-  background: linear-gradient(135deg, #0A0F0D 0%, #1A2420 30%, #1E3A2F 65%, #2D6A4F 100%);
-}
-
-.hero-gradient-orange {
-  background: linear-gradient(135deg, #0A0F0D 0%, #1C1210 50%, #78350F 100%);
-}
-
-/* Glass effect - dark */
-.glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Smooth card hover */
-.card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
-}
-
-/* Animated gradient text - iPartner green */
-.gradient-text {
-  background: linear-gradient(135deg, #22C55E, #4ADE80, #10B981);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Form focus styles */
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
-  border-color: var(--primary);
-}
-
-/* Iframe responsive */
-iframe {
-  max-width: 100%;
-}
-
-/* Pulse animation for CTAs */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-  50% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
-}
-
-.pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Fade in animation */
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 0.6s ease-out forwards;
-}
-
-.animate-fade-in-up-delay-1 {
-  animation: fade-in-up 0.6s ease-out 0.15s forwards;
-  opacity: 0;
-}
-
-.animate-fade-in-up-delay-2 {
-  animation: fade-in-up 0.6s ease-out 0.3s forwards;
-  opacity: 0;
-}
-
-/* Glow border effect */
-.glow-border {
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.1), 0 0 20px -5px rgba(34, 197, 94, 0.1);
-}
-.glow-border:hover {
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3), 0 0 30px -5px rgba(34, 197, 94, 0.15);
-}
-
-/* Mobile touch target */
-@media (max-width: 768px) {
-  button, a, select, input {
-    min-height: 44px;
+/* In the base layer so Tailwind utilities (h-8, w-auto, …) can override it.
+   Unlayered, this beats every utility class — cascade layers ignore
+   specificity — which rendered the nav logo at its natural 800×210. */
+@layer base {
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+    height: auto;
   }
 }
 
-/* Custom scrollbar - dark */
-::-webkit-scrollbar {
-  width: 6px;
+/* Long domains / mono labels shouldn't blow out flex/grid tracks */
+.ipp-break {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+/* Narrow phones (320–374) */
+@media (max-width: 374px) {
+  .ipp-loud {
+    letter-spacing: -0.02em !important;
+  }
 }
-::-webkit-scrollbar-thumb {
-  background: #2A3D32;
-  border-radius: 3px;
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #3D5A48;
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.55s ease-out both;
+}
+.animate-fade-in-up-delay-1 {
+  animation: fade-in-up 0.55s ease-out 0.08s both;
+}
+.animate-fade-in-up-delay-2 {
+  animation: fade-in-up 0.55s ease-out 0.16s both;
+}
+
+/* Homepage section rhythm — soft dark → light washes + gaps between bands */
+.ipp-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-block: 1.25rem 0;
+}
+
+@media (min-width: 640px) {
+  .ipp-stack {
+    gap: 1.75rem;
+    padding-block: 1.75rem 0;
+  }
+}
+
+.ipp-band {
+  position: relative;
+  overflow: hidden;
+  margin-inline: max(0.5rem, env(safe-area-inset-left, 0px));
+  margin-inline-end: max(0.5rem, env(safe-area-inset-right, 0px));
+  border-radius: 1rem;
+}
+
+@media (min-width: 640px) {
+  .ipp-band {
+    margin-inline: 1.25rem;
+    border-radius: 1.35rem;
+  }
+}
+
+@media (max-width: 379px) {
+  .ipp-band {
+    margin-inline: 0.35rem;
+    border-radius: 0.85rem;
+  }
+}
+
+/* Mist slate → cream */
+.ipp-band-a {
+  background: linear-gradient(
+    165deg,
+    #c5ced4 0%,
+    #dde3e6 28%,
+    #efecea 62%,
+    #f9f7f5 100%
+  );
+}
+
+/* Cooler ink wash → cream */
+.ipp-band-b {
+  background: linear-gradient(
+    195deg,
+    #b8c4cb 0%,
+    #d2dcd4 22%,
+    #e8e6e3 55%,
+    #f9f7f5 100%
+  );
+}
+
+/* Greener mist → cream */
+.ipp-band-c {
+  background: linear-gradient(
+    175deg,
+    #c4d0c0 0%,
+    #d9e2d4 30%,
+    #eceae6 60%,
+    #f9f7f5 100%
+  );
 }

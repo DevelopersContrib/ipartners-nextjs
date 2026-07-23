@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { sendEmail, escapeHtml } from '@/lib/ses';
+import { createEngagement } from '@/lib/engagements';
 
 interface ApplyPayload {
   domain: string;
@@ -132,6 +133,20 @@ export async function POST(request: NextRequest) {
   );
 
   await Promise.all([applicantEmail, adminEmail]);
+
+  try {
+    await createEngagement({
+      email: data.email,
+      mode: 'builder',
+      scopeType: 'domain',
+      scopeValue: data.domain_name,
+      status: 'pending',
+      sourceTable: 'IPartner',
+      sourceId: id,
+    });
+  } catch (engErr) {
+    console.error('[ipartner] engagement write failed:', engErr);
+  }
 
   return NextResponse.json({
     success: true,
