@@ -45,6 +45,17 @@ export function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
+/**
+ * Configuration set for this app's mail. Gives SES per-track reputation
+ * metrics, its own suppression scope, and an event destination that publishes
+ * bounces/complaints to SNS.
+ *
+ * ⚠️ Transactional (sign-in codes) MUST NOT share a config set with bulk
+ * sending. If a newsletter run damages a shared reputation, partners stop
+ * being able to log in.
+ */
+const CONFIGURATION_SET = process.env.SES_CONFIGURATION_SET || undefined;
+
 export interface SendEmailArgs {
   to: string | string[];
   subject: string;
@@ -52,6 +63,8 @@ export interface SendEmailArgs {
   text?: string;
   from?: string;
   replyTo?: string | string[];
+  /** Per-send override; defaults to SES_CONFIGURATION_SET. */
+  configurationSetName?: string;
 }
 
 export async function sendEmail(
@@ -70,6 +83,7 @@ export async function sendEmail(
     const res = await client.send(
       new SendEmailCommand({
         Source: from,
+        ConfigurationSetName: opts.configurationSetName ?? CONFIGURATION_SET,
         Destination: { ToAddresses: toList },
         ReplyToAddresses: opts.replyTo
           ? Array.isArray(opts.replyTo)

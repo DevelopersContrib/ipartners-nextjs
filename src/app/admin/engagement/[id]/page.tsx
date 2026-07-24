@@ -8,6 +8,7 @@ import { getTrafficForDomains, formatVisitors } from "@/lib/partner-traffic";
 import EngagementForm from "../../EngagementForm";
 import RowActions from "./RowActions";
 import DeleteButton from "./DeleteButton";
+import CampaignSends from "./CampaignSends";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export default async function EngagementDetail({
   const e = await prisma.ippEngagement.findUnique({ where: { id: engagementId } });
   if (!e) notFound();
 
-  const [profile, siblings, traffic, member] = await Promise.all([
+  const [profile, siblings, traffic, member, campaignSends] = await Promise.all([
     getPartnerProfile(e.email),
     prisma.ippEngagement.findMany({
       where: { email: e.email, id: { not: engagementId } },
@@ -52,6 +53,10 @@ export default async function EngagementDetail({
     prisma.members.findFirst({
       where: { EmailAddress: e.email },
       select: { MemberId: true, SignupDate: true, LastLogin: true },
+    }),
+    prisma.ippCampaignSend.findMany({
+      where: { engagementId },
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
@@ -119,6 +124,17 @@ export default async function EngagementDetail({
             <DeleteButton id={String(e.id)} />
           </div>
         </section>
+
+        <CampaignSends
+          engagementId={String(e.id)}
+          sends={campaignSends.map((s) => ({
+            campaignKey: s.campaignKey,
+            sendStatus: s.sendStatus,
+            providerId: s.providerId,
+            error: s.error,
+            createdAt: s.createdAt.toISOString(),
+          }))}
+        />
 
         {t && t.visitors30d > 0 && (
           <section className="rounded-2xl border border-[var(--border)] bg-white p-5">

@@ -11,6 +11,12 @@ import {
   isSponsorTier,
 } from "./admin";
 import { createEngagement } from "./engagements";
+import {
+  notifyEngagementStatus,
+  notifyStatusChange,
+  isCampaignKey,
+  sendEngagementCampaign,
+} from "./campaigns";
 
 /**
  * Full engagement admin — create / update / delete / status on ipp_engagement.
@@ -56,6 +62,12 @@ export async function setEngagementStatus(
     return { ok: false, error: `Max ${MAX_BULK} at a time — keep bulk actions reviewable` };
   }
 
+  const existing = await prisma.ippEngagement.findMany({
+    where: { id: { in: parsed } },
+    select: { id: true, status: true },
+  });
+  const previousById = new Map(existing.map((r) => [String(r.id), r.status]));
+
   const res = await prisma.ippEngagement.updateMany({
     where: { id: { in: parsed } },
     data: { status },
@@ -65,6 +77,11 @@ export async function setEngagementStatus(
     `[admin] ${admin.email} set ${res.count} engagement(s) -> ${status} [${parsed
       .slice(0, 10)
       .join(",")}${parsed.length > 10 ? ",…" : ""}]`
+  );
+
+  // Lifecycle campaigns (SES) — never block the admin write on mail failure.
+  void notifyStatusChange(parsed, status, previousById).catch((err) =>
+    console.error("[admin] campaign notify failed:", err)
   );
 
   revalidateEngagement();
@@ -158,6 +175,15 @@ export async function createEngagementAdmin(
     },
   });
 
+  void notifyEngagementStatus({
+    id: row.id,
+    email: parsed.data.email,
+    mode: parsed.data.mode,
+    scopeValue: parsed.data.scopeValue,
+    status: parsed.data.status,
+    tier: parsed.data.tier,
+  }).catch((err) => console.error("[admin] campaign notify failed:", err));
+
   console.log(`[admin] ${admin.email} created engagement #${row.id} (${parsed.data.email})`);
   revalidateEngagement(row.id);
   redirect(`/admin/engagement/${row.id}`);
@@ -179,6 +205,12 @@ export async function updateEngagementAdmin(
     select: { MemberId: true },
   });
 
+  const previous = await prisma.ippEngagement.findUnique({
+    where: { id: engagementId },
+    select: { status: true },
+  });
+  if (!previous) return { ok: false, error: "Engagement not found" };
+
   try {
     await prisma.ippEngagement.update({
       where: { id: engagementId },
@@ -198,8 +230,50 @@ export async function updateEngagementAdmin(
     return { ok: false, error: "Engagement not found" };
   }
 
+  if (previous.status !== parsed.data.status) {
+    void notifyStatusChange(
+      [engagementId],
+      parsed.data.status,
+      new Map([[String(engagementId), previous.status]])
+    ).catch((err) => console.error("[admin] campaign notify failed:", err));
+  }
+
   console.log(`[admin] ${admin.email} updated engagement #${engagementId}`);
   revalidateEngagement(engagementId);
+  return { ok: true, id: String(engagementId) };
+}
+
+export async function resendEngagementCampaign(
+  id: string,
+  campaignKey: string
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const engagementId = parseId(id);
+  if (!engagementId) return { ok: false, error: "Invalid id" };
+
+  if (!isCampaignKey(campaignKey)) return { ok: false, error: "Unknown campaign" };
+
+  const row = await prisma.ippEngagement.findUnique({ where: { id: engagementId } });
+  if (!row) return { ok: false, error: "Engagement not found" };
+
+  const res = await sendEngagementCampaign(
+    {
+      id: row.id,
+      email: row.email,
+      mode: row.mode,
+      scopeValue: row.scopeValue,
+      status: row.status,
+      tier: row.tier,
+    },
+    campaignKey,
+    { force: true }
+  );
+
+  console.log(
+    `[admin] ${admin.email} resend ${campaignKey} for #${engagementId}: ${res.ok ? "ok" : res.reason}`
+  );
+  revalidateEngagement(engagementId);
+  if (!res.ok) return { ok: false, error: res.reason || "Send failed" };
   return { ok: true, id: String(engagementId) };
 }
 
@@ -209,6 +283,7 @@ export async function deleteEngagementAdmin(id: string): Promise<ActionResult> {
   if (!engagementId) return { ok: false, error: "Invalid id" };
 
   try {
+    await prisma.ippCampaignSend.deleteMany({ where: { engagementId } });
     await prisma.ippEngagement.delete({ where: { id: engagementId } });
   } catch {
     return { ok: false, error: "Engagement not found" };

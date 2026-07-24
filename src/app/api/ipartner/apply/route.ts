@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { sendEmail, escapeHtml } from '@/lib/ses';
 import { createEngagement } from '@/lib/engagements';
+import { notifyEngagementStatus } from '@/lib/campaigns';
 
 interface ApplyPayload {
   domain: string;
@@ -107,17 +108,8 @@ export async function POST(request: NextRequest) {
     ? `You already have an existing iPartner application to ${data.domain_name} but you have successfully edited your iPartner application.`
     : `Thank you for applying to partner with ${data.domain_name}. Our team will review your application and reach out.`;
 
-  // Fire-and-note email sends (don't fail the request if SES errors)
-  const applicantEmail = sendApplicantEmail({
-    to: data.email,
-    firstName: data.firstname ?? firstName,
-    domain: data.domain_name,
-    isUpdate,
-  }).catch((err) => {
-    console.error('[ipartner] applicant email failed:', err);
-    return null;
-  });
-
+  // Applicant lifecycle mail goes through SES campaigns (idempotent).
+  // Admin ops alert stays a one-off SES send.
   const NOTIFICATION_EMAILS = [
     'admin@domaindirectory.com',
     'chad@ecorp.com',
@@ -132,10 +124,9 @@ export async function POST(request: NextRequest) {
     }
   );
 
-  await Promise.all([applicantEmail, adminEmail]);
-
+  let engagementId: bigint | null = null;
   try {
-    await createEngagement({
+    const engagement = await createEngagement({
       email: data.email,
       mode: 'builder',
       scopeType: 'domain',
@@ -144,40 +135,33 @@ export async function POST(request: NextRequest) {
       sourceTable: 'IPartner',
       sourceId: id,
     });
+    engagementId = engagement.id;
+    void notifyEngagementStatus(
+      {
+        id: engagement.id,
+        email: engagement.email,
+        mode: engagement.mode,
+        scopeValue: engagement.scopeValue,
+        status: engagement.status,
+        tier: engagement.tier,
+        firstName: data.firstname ?? firstName,
+      },
+      // Re-apply / edit should still confirm — force so partners get the update notice.
+      { force: isUpdate, firstName: data.firstname ?? firstName }
+    ).catch((err) => console.error('[ipartner] campaign failed:', err));
   } catch (engErr) {
     console.error('[ipartner] engagement write failed:', engErr);
   }
 
+  await adminEmail;
+
   return NextResponse.json({
     success: true,
     id,
+    engagement_id: engagementId != null ? String(engagementId) : undefined,
     isUpdate,
     message: humanMessage,
   });
-}
-
-async function sendApplicantEmail(args: {
-  to: string;
-  firstName: string;
-  domain: string;
-  isUpdate: boolean;
-}) {
-  const subject = args.isUpdate
-    ? `Your iPartner application for ${args.domain} has been updated`
-    : `We received your iPartner application for ${args.domain}`;
-  const opener = args.isUpdate
-    ? `Thanks — your iPartner application for <strong>${escapeHtml(args.domain)}</strong> has been updated.`
-    : `Thanks for applying to partner with <strong>${escapeHtml(args.domain)}</strong>. We've received your application.`;
-  const html = `
-    <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;color:#0f172a">
-      <h2 style="margin:0 0 12px">Hi ${escapeHtml(args.firstName)},</h2>
-      <p>${opener}</p>
-      <p>Our team will review and follow up with next steps. If you need to reach us in the meantime, just reply to this email.</p>
-      <p style="margin-top:24px;color:#64748b;font-size:12px">— The iPartner team</p>
-    </div>
-  `;
-  const text = `Hi ${args.firstName},\n\n${args.isUpdate ? `Your iPartner application for ${args.domain} has been updated.` : `Thanks for applying to partner with ${args.domain}. We've received your application.`}\n\nOur team will review and follow up.\n\n— The iPartner team`;
-  return sendEmail({ to: args.to, subject, html, text });
 }
 
 async function sendAdminEmail(args: {

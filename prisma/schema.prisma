@@ -82,6 +82,23 @@ model IppEngagement {
   @@map("ipp_engagement")
 }
 
+/// SES campaign send log — one row per (engagement, campaign_key) for idempotency.
+model IppCampaignSend {
+  id           BigInt   @id @default(autoincrement())
+  engagementId BigInt   @map("engagement_id")
+  campaignKey  String   @map("campaign_key") @db.VarChar(64)
+  email        String   @db.VarChar(255)
+  sendStatus   String   @default("sent") @map("send_status") @db.VarChar(24)
+  providerId   String?  @map("provider_id") @db.VarChar(191)
+  error        String?  @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([engagementId, campaignKey], map: "uq_engagement_campaign")
+  @@index([email], map: "idx_campaign_email")
+  @@index([campaignKey], map: "idx_campaign_key")
+  @@map("ipp_campaign_send")
+}
+
 // ───────────────────── EXISTING — read/write, never migrate ─────────────────────
 
 /// Contrib member store (108k rows) — the identity source of truth.

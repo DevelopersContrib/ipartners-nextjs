@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { coerceMode, createEngagement } from '@/lib/engagements';
+import { notifyEngagementStatus } from '@/lib/campaigns';
 import { normalizeInboundRef } from '@/lib/inbound-platforms';
 
 const INGEST_URL =
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
     const ipartnerId = (data as { ipartner_id?: number }).ipartner_id;
 
     try {
-      await createEngagement({
+      const engagement = await createEngagement({
         email,
         mode,
         scopeType: vertical ? 'vertical' : 'domain',
@@ -106,6 +107,17 @@ export async function POST(req: NextRequest) {
           ? { sourceTable: 'IPartner' as const, sourceId: ipartnerId }
           : {}),
       });
+      void notifyEngagementStatus(
+        {
+          id: engagement.id,
+          email: engagement.email,
+          mode: engagement.mode,
+          scopeValue: engagement.scopeValue,
+          status: engagement.status,
+          tier: engagement.tier,
+          firstName: firstname || null,
+        },
+      ).catch((err) => console.error('[api/apply] campaign failed:', err));
     } catch (engErr) {
       console.error('[api/apply] engagement write failed:', engErr);
     }
