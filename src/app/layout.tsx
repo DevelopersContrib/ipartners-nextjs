@@ -48,16 +48,37 @@ export const metadata: Metadata = {
   },
 };
 
+function vnocTrackerAttrs() {
+  const enabled =
+    (process.env.NEXT_PUBLIC_VNOC_ANALYTICS_ENABLED || "true").toLowerCase() !==
+    "false";
+  if (!enabled) return null;
+  const endpoint = (
+    process.env.NEXT_PUBLIC_VNOC_ANALYTICS_URL || "https://analytics.vnoc.com"
+  ).replace(/\/$/, "");
+  const domain = (process.env.NEXT_PUBLIC_DOMAIN || "ipartner.com")
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, "");
+  if (!domain) return null;
+  return { endpoint, domain };
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const vnoc = vnocTrackerAttrs();
+
   return (
     <html
       lang="en"
       className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {vnoc && <link rel="preconnect" href={vnoc.endpoint} />}
+      </head>
       <body className={`${comfortaa.className} min-h-full flex flex-col`}>
         <style>{`
           h1, h2, h3, h4, .ipp-loud {
@@ -67,6 +88,16 @@ export default function RootLayout({
             line-height: 1.08;
           }
         `}</style>
+        {/* Native script so tracker.js can read data-* via document.currentScript */}
+        {vnoc && (
+          // eslint-disable-next-line @next/next/no-sync-scripts
+          <script
+            src={`${vnoc.endpoint}/tracker.js`}
+            data-endpoint={vnoc.endpoint}
+            data-domain={vnoc.domain}
+            defer
+          />
+        )}
         <Analytics />
         <Header domain="ipartner.com" />
         <InboundCatchBanner />
