@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Comfortaa, Geist_Mono, Poppins } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -13,16 +14,11 @@ export const viewport: Viewport = {
   themeColor: "#f9f7f5",
 };
 
-/** Logo / body — rounded wordmark match. */
 const comfortaa = Comfortaa({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
-/**
- * Claude mock titles — Poppins (geometric, single-story a, friendly terminals).
- * Loaded via variable so @font-face always ships.
- */
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["500", "600", "700", "800"],
@@ -64,12 +60,23 @@ function vnocTrackerAttrs() {
   return { endpoint, domain };
 }
 
-export default function RootLayout({
+function isAppShell(pathname: string) {
+  return (
+    pathname === "/portal" ||
+    pathname.startsWith("/portal/") ||
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/")
+  );
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const vnoc = vnocTrackerAttrs();
+  const pathname = (await headers()).get("x-pathname") || "";
+  const appShell = isAppShell(pathname);
 
   return (
     <html
@@ -88,7 +95,6 @@ export default function RootLayout({
             line-height: 1.08;
           }
         `}</style>
-        {/* Native script so tracker.js can read data-* via document.currentScript */}
         {vnoc && (
           // eslint-disable-next-line @next/next/no-sync-scripts
           <script
@@ -99,10 +105,16 @@ export default function RootLayout({
           />
         )}
         <Analytics />
-        <Header domain="ipartner.com" />
-        <InboundCatchBanner />
+        {!appShell && (
+          <>
+            <Header domain="ipartner.com" />
+            <InboundCatchBanner />
+          </>
+        )}
         <main className="flex-1">{children}</main>
-        <Footer domain={process.env.NEXT_PUBLIC_DOMAIN || "ipartner.com"} />
+        {!appShell && (
+          <Footer domain={process.env.NEXT_PUBLIC_DOMAIN || "ipartner.com"} />
+        )}
       </body>
     </html>
   );

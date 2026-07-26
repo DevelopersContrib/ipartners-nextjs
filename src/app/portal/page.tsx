@@ -1,247 +1,184 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePartner } from "@/lib/auth";
-import { getAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
-import { logout } from "@/lib/auth-actions";
 import { MODE_LABELS, statusLabel, type EngagementMode } from "@/lib/engagement-modes";
-import DomainReferralLink from "@/components/DomainReferralLink";
-import { formatDomainDisplay } from "@/lib/vertical-brands";
-import { getTrafficForDomains, formatVisitors } from "@/lib/partner-traffic";
+import {
+  getDiscoverOpportunities,
+  formatDomainDisplay,
+  formatBrandStat,
+} from "@/lib/portal-opportunities";
+import BrandLogo from "@/components/BrandLogo";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Dashboard — iPartner",
+  title: "Home — iPartner",
   robots: { index: false },
 };
 
-export default async function PortalPage() {
-  const partner = await requirePartner();
-  const admin = await getAdmin();
+export default async function PortalHomePage() {
+  const partner = await requirePartner("/portal");
+  const name =
+    [partner.firstName, partner.lastName].filter(Boolean).join(" ") ||
+    partner.email.split("@")[0] ||
+    "there";
 
   const engagements = await prisma.ippEngagement.findMany({
     where: { email: partner.email },
-    orderBy: { createdAt: "desc" },
-    take: 100,
+    orderBy: { updatedAt: "desc" },
+    take: 50,
   });
 
-  const active = engagements.filter((e) => e.status === "approved" || e.status === "active").length;
-  const pending = engagements.filter((e) => e.status === "pending").length;
-  const name = [partner.firstName, partner.lastName].filter(Boolean).join(" ") || partner.email;
+  const pending = engagements.filter((e) => e.status === "pending");
+  const active = engagements.filter(
+    (e) => e.status === "approved" || e.status === "active",
+  );
 
-  // Live 30-day traffic on the domains they're partnered on — the number that
-  // makes the dashboard worth opening. Degrades to nothing on failure.
-  const partnerDomains = engagements
-    .map((e) => e.scopeValue)
-    .filter((v): v is string => !!v && v.includes("."));
-  const traffic = await getTrafficForDomains(partnerDomains);
-  const reach30d = partnerDomains.reduce(
-    (sum, d) => sum + (traffic[d.toLowerCase()]?.visitors30d ?? 0),
-    0
+  const engagedDomains = new Set(
+    engagements
+      .map((e) => e.scopeValue?.toLowerCase())
+      .filter((v): v is string => !!v && v.includes(".")),
+  );
+
+  const matches = (await getDiscoverOpportunities({ limit: 12 })).filter(
+    (o) => !engagedDomains.has(o.domainName.toLowerCase()),
   );
 
   return (
-    <main className="min-h-screen bg-[var(--ipp-bg)] px-4 py-10 sm:py-14">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--ipp-text)]">Hi, {name}</h1>
-            <p className="text-[var(--ipp-secondary)] text-sm mt-1">{partner.email}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {admin && (
-              <Link
-                href="/admin"
-                className="min-h-11 inline-flex items-center px-3 text-sm font-semibold text-[var(--ipp-primary)] underline underline-offset-4"
-              >
-                Engagement admin
-              </Link>
-            )}
-            <form action={logout}>
-              <button className="min-h-11 px-3 text-sm font-medium text-[var(--ipp-secondary)] hover:text-[var(--ipp-text)] underline underline-offset-4">
-                Sign out
-              </button>
-            </form>
-          </div>
-        </header>
-
-        {engagements.length > 0 && (
-        <div className={`grid gap-3 ${reach30d > 0 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
-          <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
-            <p className="text-xs uppercase tracking-wider text-[var(--ipp-secondary)]">Active</p>
-            <p className="mt-1 text-3xl font-bold text-[var(--ipp-text)]">{active}</p>
-          </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
-            <p className="text-xs uppercase tracking-wider text-[var(--ipp-secondary)]">Under review</p>
-            <p className="mt-1 text-3xl font-bold text-[var(--ipp-text)]">{pending}</p>
-          </div>
-          {reach30d > 0 && (
-            <div className="rounded-2xl border border-[var(--border)] bg-white p-4 col-span-2 sm:col-span-1">
-              <p className="text-xs uppercase tracking-wider text-[var(--ipp-secondary)]">30-day reach</p>
-              <p className="mt-1 text-3xl font-bold text-[var(--ipp-text)] tabular-nums">
-                {formatVisitors(reach30d)}
-              </p>
-              <p className="text-[11px] text-[var(--ipp-secondary)] mt-0.5">
-                visitors across your domains
-              </p>
-            </div>
-          )}
-        </div>
-        )}
-
-        <section className="rounded-2xl border border-[var(--border)] bg-white p-5 sm:p-6">
-          {engagements.length > 0 && (
-            <div className="flex items-baseline justify-between gap-3 mb-4">
-              <h2 className="text-lg font-semibold text-[var(--ipp-text)]">Your partnerships</h2>
-              <span className="text-xs text-[var(--ipp-secondary)]">{engagements.length}</span>
-            </div>
-          )}
-
-          {engagements.length === 0 ? (
-            /* A new partner's first minute inside. Not an empty state — the
-               story of what they just joined, and the door to their first
-               partnership. */
-            <div className="space-y-8">
-              <div className="space-y-5 max-w-xl">
-                <p className="text-xs font-semibold tracking-widest uppercase text-[var(--ipp-accent)]">
-                  You&rsquo;re in. Here&rsquo;s what you joined.
-                </p>
-                <p className="text-lg sm:text-xl leading-relaxed text-[var(--ipp-text)] font-medium">
-                  For thirteen years we&rsquo;ve been collecting the names people type —
-                  nineteen thousand of them, across 54 categories.
-                </p>
-                <p className="text-[15px] leading-relaxed text-[var(--ipp-secondary)]">
-                  We could have parked them and waited for offers. We made a different bet:
-                  <span className="text-[var(--ipp-text)] font-medium"> a great name deserves a great
-                  operator more than it deserves a buyer.</span> So instead of selling domains,
-                  we hand them to people who can build on them — and we grow together.
-                </p>
-                <p className="text-[15px] leading-relaxed text-[var(--ipp-secondary)]">
-                  81,000 partnerships later, that bet is the network you just signed into.
-                  The next one starts here, with you.
-                </p>
-              </div>
-
-              <div className="border-t border-[var(--border)] pt-6">
-                <h3 className="text-sm font-semibold text-[var(--ipp-text)] mb-4">
-                  Start your first partnership
-                </h3>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  <Link
-                    href="/apply"
-                    className="group rounded-xl border border-[var(--border)] bg-[var(--ipp-bg)] p-4 hover:border-[var(--ipp-primary)] transition"
-                  >
-                    <p className="font-semibold text-[var(--ipp-text)] text-sm">Build on a name</p>
-                    <p className="mt-1 text-xs text-[var(--ipp-secondary)] leading-relaxed">
-                      Take a domain you believe in and run it. Equity, not rent.
-                    </p>
-                    <p className="mt-3 text-xs font-semibold text-[var(--ipp-primary)] group-hover:underline underline-offset-2">
-                      Choose your domain &rarr;
-                    </p>
-                  </Link>
-                  <Link
-                    href="/apply?mode=sponsor"
-                    className="group rounded-xl border border-[var(--border)] bg-[var(--ipp-bg)] p-4 hover:border-[var(--ipp-primary)] transition"
-                  >
-                    <p className="font-semibold text-[var(--ipp-text)] text-sm">Sponsor a category</p>
-                    <p className="mt-1 text-xs text-[var(--ipp-secondary)] leading-relaxed">
-                      Put your brand across every site in your vertical.
-                    </p>
-                    <p className="mt-3 text-xs font-semibold text-[var(--ipp-primary)] group-hover:underline underline-offset-2">
-                      See the categories &rarr;
-                    </p>
-                  </Link>
-                  <Link
-                    href="/domain/apply"
-                    className="group rounded-xl border border-[var(--border)] bg-[var(--ipp-bg)] p-4 hover:border-[var(--ipp-primary)] transition"
-                  >
-                    <p className="font-semibold text-[var(--ipp-text)] text-sm">Bring your domains</p>
-                    <p className="mt-1 text-xs text-[var(--ipp-secondary)] leading-relaxed">
-                      Own a portfolio? Put it to work inside the network.
-                    </p>
-                    <p className="mt-3 text-xs font-semibold text-[var(--ipp-primary)] group-hover:underline underline-offset-2">
-                      Add your portfolio &rarr;
-                    </p>
-                  </Link>
-                </div>
-                <p className="mt-4 text-xs text-[var(--ipp-secondary)]">
-                  Every application is read by a person. Approved partnerships go live on the
-                  network and appear right here.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <ul className="space-y-3">
-              {engagements.map((e) => (
-                <li
-                  key={String(e.id)}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--ipp-bg)] px-4 py-3 flex flex-wrap items-center gap-x-3 gap-y-2"
-                >
-                  <span className="text-sm font-semibold text-[var(--ipp-text)]">
-                    {MODE_LABELS[e.mode as EngagementMode] || e.mode}
-                  </span>
-                  {e.scopeValue && (
-                    <span className="text-xs font-mono text-[var(--ipp-secondary)]">
-                      {e.scopeValue.includes(".") ? (
-                        <DomainReferralLink
-                          domain={e.scopeValue}
-                          className="hover:text-[var(--ipp-accent)] hover:underline underline-offset-2"
-                        >
-                          {formatDomainDisplay(e.scopeValue)}
-                        </DomainReferralLink>
-                      ) : (
-                        e.scopeValue
-                      )}
-                    </span>
-                  )}
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-white border border-[var(--border)] text-[var(--ipp-secondary)]">
-                    {statusLabel(e.status)}
-                  </span>
-                  {e.tier && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--ipp-accent)]/15 text-[var(--ipp-text)] capitalize">
-                      {e.tier}
-                    </span>
-                  )}
-                  {e.scopeValue && (traffic[e.scopeValue.toLowerCase()]?.visitors30d ?? 0) > 0 && (
-                    <span
-                      className="ml-auto text-xs text-[var(--ipp-secondary)] tabular-nums"
-                      title="Unique visitors, last 30 days"
-                    >
-                      {formatVisitors(traffic[e.scopeValue.toLowerCase()]!.visitors30d)} visitors / 30d
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="rounded-2xl border border-[var(--border)] bg-white p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-base font-semibold text-[var(--ipp-text)]">
-              Know someone who&rsquo;d fit the network?
-            </h2>
-            <p className="text-sm text-[var(--ipp-secondary)] mt-1">
-              Partners make the best referrers — you know what a good fit looks like. Earn when they join.
-            </p>
-          </div>
+    <div className="mx-auto max-w-4xl space-y-7 sm:space-y-8">
+      <header className="space-y-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 sm:text-xs">
+          Welcome back
+        </p>
+        <h1 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+          Hi {name}. New opportunities are waiting.
+        </h1>
+        <p className="max-w-xl text-sm leading-relaxed text-zinc-500 sm:text-base">
+          Browse partnership matches across the network — then apply, follow up, and grow.
+        </p>
+        <div className="pt-1 sm:pt-2">
           <Link
-            href="/referrals"
-            className="inline-flex items-center justify-center min-h-11 px-5 rounded-xl bg-[var(--ipp-primary)] text-white text-sm font-semibold hover:brightness-110 transition"
+            href="/portal/discover"
+            className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 active:scale-[0.99] sm:w-auto"
           >
-            Refer a partner
+            Find opportunities
+          </Link>
+        </div>
+      </header>
+
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-sm font-semibold text-zinc-900">New partnership matches</h2>
+          <Link
+            href="/portal/discover"
+            className="shrink-0 text-xs font-medium text-zinc-500 hover:text-zinc-900"
+          >
+            See all
+          </Link>
+        </div>
+        {matches.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-500 sm:p-6">
+            No fresh matches yet — explore Discover to browse the full inventory.
+          </div>
+        ) : (
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {matches.slice(0, 6).map((m) => (
+              <li key={m.domainName}>
+                <Link
+                  href={`/portal/opportunities/${encodeURIComponent(m.domainName)}`}
+                  className="flex min-h-[4.5rem] gap-3 rounded-2xl border border-zinc-200/90 bg-white p-3.5 transition hover:border-zinc-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:bg-zinc-50 sm:p-4"
+                >
+                  <BrandLogo domain={m.domainName} size={40} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-zinc-900">
+                      {formatDomainDisplay(m.domainName)}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-zinc-500">
+                      {m.verticalName}
+                      {m.partnerScore > 0 ? ` · Score ${m.partnerScore}` : ""}
+                    </p>
+                    {m.uniqueVisitors30d > 0 && (
+                      <p className="mt-1 text-xs tabular-nums text-zinc-400">
+                        {formatBrandStat(m.uniqueVisitors30d)} visitors / 30d
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {pending.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-zinc-900">Applications in flight</h2>
+          <ul className="space-y-2">
+            {pending.slice(0, 5).map((e) => (
+              <li
+                key={String(e.id)}
+                className="flex flex-col gap-1 rounded-2xl border border-amber-200/80 bg-amber-50/50 px-3.5 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 sm:px-4"
+              >
+                <span className="text-sm font-medium text-zinc-900">
+                  {MODE_LABELS[e.mode as EngagementMode] || e.mode}
+                </span>
+                {e.scopeValue && (
+                  <span className="truncate font-mono text-xs text-zinc-500">{e.scopeValue}</span>
+                )}
+                <span className="text-xs text-amber-800 sm:ml-auto">
+                  {statusLabel(e.status)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Link
+            href="/portal/deals"
+            className="inline-block text-xs font-medium text-zinc-500 hover:text-zinc-900"
+          >
+            View all deals →
           </Link>
         </section>
+      )}
 
-        {engagements.length > 0 && (
-          <p className="text-center">
-            <Link href="/apply" className="text-sm font-semibold text-[var(--ipp-accent)] underline underline-offset-4">
-              Start another partnership
-            </Link>
+      {active.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-zinc-900">Active partnerships</h2>
+          <ul className="space-y-2">
+            {active.slice(0, 5).map((e) => (
+              <li
+                key={String(e.id)}
+                className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white px-3.5 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 sm:px-4"
+              >
+                <span className="text-sm font-medium text-zinc-900">
+                  {MODE_LABELS[e.mode as EngagementMode] || e.mode}
+                </span>
+                {e.scopeValue && (
+                  <span className="truncate font-mono text-xs text-zinc-500">{e.scopeValue}</span>
+                )}
+                <span className="text-xs text-zinc-500 sm:ml-auto">
+                  {statusLabel(e.status)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white/60 p-4 sm:p-5">
+          <p className="text-sm font-medium text-zinc-800">Invitations</p>
+          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+            When partners invite you to a deal, they&apos;ll show up here.
           </p>
-        )}
-      </div>
-    </main>
+        </div>
+        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white/60 p-4 sm:p-5">
+          <p className="text-sm font-medium text-zinc-800">Contracts awaiting signature</p>
+          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+            Coming soon — agreements will land here when they&apos;re ready.
+          </p>
+        </div>
+      </section>
+    </div>
   );
 }

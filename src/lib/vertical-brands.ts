@@ -191,6 +191,10 @@ export async function getVerticalBrandsByValue(
   slug: string,
   limit = VERTICAL_BRANDS_LIMIT,
 ): Promise<{ brands: VerticalBrand[]; total: number }> {
+  if (!process.env.CONTRIB_DATABASE_URL?.trim()) {
+    return { brands: [], total: 0 };
+  }
+
   const match = VERTICAL_MATCH[slug];
   if (!match) return { brands: [], total: 0 };
 
@@ -234,8 +238,11 @@ export async function getVerticalBrandsByValue(
     cf_visitors: number | null;
   };
 
-  const [rows, countRows] = await Promise.all([
-    prisma.$queryRawUnsafe<Row[]>(`
+  let rows: Row[] = [];
+  let total = 0;
+  try {
+    const [rawRows, countRows] = await Promise.all([
+      prisma.$queryRawUnsafe<Row[]>(`
       SELECT
         d.domain_name,
         d.price AS asking_price,
@@ -261,14 +268,19 @@ export async function getVerticalBrandsByValue(
       ORDER BY value DESC, d.domain_name ASC
       LIMIT ${safeLimit}
     `),
-    prisma.$queryRawUnsafe<[{ c: bigint | number }]>(`
+      prisma.$queryRawUnsafe<[{ c: bigint | number }]>(`
       SELECT COUNT(*) AS c
       FROM domaindi_managedomain.domain d
       WHERE ${whereSql}
     `),
-  ]);
+    ]);
+    rows = rawRows;
+    total = n(countRows[0]?.c);
+  } catch (err) {
+    console.error("[vertical-brands] query failed:", err);
+    return { brands: [], total: 0 };
+  }
 
-  const total = n(countRows[0]?.c);
   const base = rows.map((r) => {
     const partnersDollars = n(r.partners_dollars);
     return {

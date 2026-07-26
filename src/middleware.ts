@@ -66,6 +66,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (ref) withRefCookie(res, ref);
+
+  // Let layouts know the path (hide marketing chrome on /portal, /admin).
+  res.headers.set("x-pathname", request.nextUrl.pathname);
   return res;
 }
 
