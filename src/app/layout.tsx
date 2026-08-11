@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Comfortaa, Geist_Mono, Poppins } from "next/font/google";
 import { headers } from "next/headers";
+import Script from "next/script";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -96,12 +97,11 @@ export default async function RootLayout({
           }
         `}</style>
         {vnoc && (
-          // eslint-disable-next-line @next/next/no-sync-scripts
-          <script
+          <Script
             src={`${vnoc.endpoint}/tracker.js`}
+            strategy="beforeInteractive"
             data-endpoint={vnoc.endpoint}
             data-domain={vnoc.domain}
-            defer
           />
         )}
         <Analytics />

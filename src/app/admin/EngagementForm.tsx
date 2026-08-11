@@ -142,12 +142,13 @@ export default function EngagementForm({
 
         <div>
           <label className={labelClass} htmlFor="scopeValue">
-            Scope value
+            Scope value{engagementMode === "sponsor" ? " *" : ""}
           </label>
           <input
             id="scopeValue"
             name="scopeValue"
             type="text"
+            required={engagementMode === "sponsor"}
             defaultValue={initial?.scopeValue || ""}
             placeholder="domain.com or vertical slug"
             className={inputClass}
@@ -156,11 +157,12 @@ export default function EngagementForm({
 
         <div>
           <label className={labelClass} htmlFor="tier">
-            Sponsor tier
+            Sponsor tier{engagementMode === "sponsor" ? " *" : ""}
           </label>
           <select
             id="tier"
             name="tier"
+            required={engagementMode === "sponsor"}
             defaultValue={initial?.tier || ""}
             disabled={engagementMode !== "sponsor"}
             className={inputClass}
@@ -172,6 +174,11 @@ export default function EngagementForm({
               </option>
             ))}
           </select>
+          {engagementMode === "sponsor" && (
+            <p className="mt-1 text-[11px] text-[var(--ipp-secondary)]">
+              Required for sponsor interest. Checkout is not live.
+            </p>
+          )}
         </div>
 
         <div>

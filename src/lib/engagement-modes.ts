@@ -38,8 +38,9 @@ export function coerceMode(raw?: string | null): EngagementMode | undefined {
 export function statusLabel(status: string): string {
   switch (status) {
     case "approved":
+      return "Approved (awaiting publish)";
     case "active":
-      return "Active";
+      return "Active (live)";
     case "pending":
       return "Under review";
     case "declined":

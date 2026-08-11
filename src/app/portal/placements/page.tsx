@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePartner } from "@/lib/auth";
+import { VERTICALS } from "@/lib/verticals";
+import { SPONSOR_TIERS } from "@/lib/admin-client";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,8 @@ const EXAMPLES = [
 
 export default async function PlacementsPage() {
   await requirePartner("/portal/placements");
+  const defaultVertical = VERTICALS[0]?.slug || "domains";
+  const defaultTier = SPONSOR_TIERS[1]; // silver
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 sm:space-y-6">
@@ -38,7 +42,8 @@ export default async function PlacementsPage() {
         </h1>
         <p className="max-w-xl text-sm leading-relaxed text-zinc-500">
           Reserve homepage, newsletter, and media placements across the network. Checkout and
-          inventory booking aren&apos;t live yet — register sponsor interest and we&apos;ll follow up.
+          inventory booking aren&apos;t live yet — register sponsor interest (vertical + tier
+          required) and we&apos;ll follow up.
         </p>
       </header>
 
@@ -55,12 +60,30 @@ export default async function PlacementsPage() {
         ))}
       </ul>
 
-      <Link
-        href="/apply?mode=sponsor"
-        className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-semibold text-white hover:bg-zinc-800 sm:w-auto"
-      >
-        Register sponsor interest
-      </Link>
+      <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <p className="text-sm font-semibold text-zinc-900">Register by tier</p>
+        <p className="text-xs text-zinc-500">
+          Pick a starting vertical ({VERTICALS[0]?.name || "Domains"}) — you can change it on the
+          apply form. Ops reviews sponsor interest in admin under mode=sponsor.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          {SPONSOR_TIERS.map((t) => (
+            <Link
+              key={t}
+              href={`/apply?mode=sponsor&vertical=${encodeURIComponent(defaultVertical)}&tier=${t}`}
+              className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-4 text-sm font-semibold capitalize text-zinc-800 hover:bg-white sm:flex-none"
+            >
+              {t} interest
+            </Link>
+          ))}
+        </div>
+        <Link
+          href={`/apply?mode=sponsor&vertical=${encodeURIComponent(defaultVertical)}&tier=${defaultTier}`}
+          className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-semibold text-white hover:bg-zinc-800 sm:w-auto"
+        >
+          Continue with {defaultTier}
+        </Link>
+      </div>
     </div>
   );
 }

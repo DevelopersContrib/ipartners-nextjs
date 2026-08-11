@@ -17,7 +17,9 @@
     "prisma:studio": "prisma studio",
     "test:handoff": "tsx --conditions=react-server --env-file=.env scripts/test-handoff.ts",
     "test-db": "tsx scripts/test-db.ts",
-    "backfill:engagements": "tsx --env-file=.env scripts/backfill-engagements.ts"
+    "backfill:engagements": "tsx --env-file=.env scripts/backfill-engagements.ts",
+    "reconcile:active": "tsx --conditions=react-server --env-file=.env scripts/reconcile-active.ts",
+    "auto:messages": "tsx --conditions=react-server --env-file=.env scripts/auto-messages.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.109.0",

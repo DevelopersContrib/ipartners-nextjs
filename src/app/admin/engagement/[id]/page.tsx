@@ -9,6 +9,10 @@ import EngagementForm from "../../EngagementForm";
 import RowActions from "./RowActions";
 import DeleteButton from "./DeleteButton";
 import CampaignSends from "./CampaignSends";
+import PublishAndEnrich from "./PublishAndEnrich";
+import SponsorInvoiceButton from "./SponsorInvoiceButton";
+import AgentThread from "./AgentThread";
+import { getApplicationDetail } from "@/lib/application-detail";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +44,8 @@ export default async function EngagementDetail({
   const e = await prisma.ippEngagement.findUnique({ where: { id: engagementId } });
   if (!e) notFound();
 
-  const [profile, siblings, traffic, member, campaignSends] = await Promise.all([
+  const [profile, siblings, traffic, member, campaignSends, application, agentMessages] =
+    await Promise.all([
     getPartnerProfile(e.email),
     prisma.ippEngagement.findMany({
       where: { email: e.email, id: { not: engagementId } },
@@ -57,6 +62,23 @@ export default async function EngagementDetail({
     prisma.ippCampaignSend.findMany({
       where: { engagementId },
       orderBy: { createdAt: "desc" },
+    }),
+    getApplicationDetail({
+      email: e.email,
+      sourceTable: e.sourceTable,
+      sourceId: e.sourceId,
+      applicationJson: e.applicationJson,
+    }),
+    prisma.ippAgentMessage.findMany({
+      where: { engagementId },
+      orderBy: { id: "asc" },
+      take: 40,
+      select: {
+        role: true,
+        content: true,
+        metaJson: true,
+        createdAt: true,
+      },
     }),
   ]);
 
@@ -103,6 +125,54 @@ export default async function EngagementDetail({
             <RowActions id={String(e.id)} status={e.status} />
           </div>
         </header>
+
+        <PublishAndEnrich
+          email={e.email}
+          domain={e.scopeValue}
+          engagementId={String(e.id)}
+          status={e.status}
+        />
+
+        {e.mode === "sponsor" && (
+          <SponsorInvoiceButton engagementId={String(e.id)} tier={e.tier} />
+        )}
+
+        <AgentThread
+          messages={agentMessages.map((m) => ({
+            role: m.role,
+            content: m.content,
+            metaJson: m.metaJson,
+            createdAt: m.createdAt.toISOString(),
+          }))}
+        />
+
+        <section className="rounded-2xl border border-[var(--border)] bg-white p-5 sm:p-6">
+          <h2 className="mb-1 text-sm font-semibold text-[var(--ipp-text)]">
+            {application.title}
+          </h2>
+          <p className="mb-4 text-[11px] text-[var(--ipp-secondary)]">
+            Source: {application.source}
+          </p>
+          {application.fields.length === 0 ? (
+            <p className="text-sm text-[var(--ipp-secondary)]">
+              No application answers on file for this engagement yet. New applies store a
+              full payload; older rows may only have profile fields below.
+            </p>
+          ) : (
+            <dl className="space-y-4">
+              {application.fields.map((f) => (
+                <div key={f.label}>
+                  <dt className="text-xs uppercase tracking-wider text-[var(--ipp-secondary)]">
+                    {f.label}
+                  </dt>
+                  <dd className="mt-0.5 whitespace-pre-wrap break-words text-sm text-[var(--ipp-text)]">
+                    {f.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </section>
 
         <section className="rounded-2xl border border-[var(--border)] bg-white p-5 sm:p-6">
           <h2 className="text-sm font-semibold text-[var(--ipp-text)] mb-4">Edit engagement</h2>

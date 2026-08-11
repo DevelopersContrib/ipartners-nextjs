@@ -54,6 +54,33 @@ export default async function DiscoverPage({
         <p className="max-w-xl text-sm leading-relaxed text-zinc-500">
           Partnership opportunities across the network — filter by vertical or mode, then apply.
         </p>
+        {(mode || vertical) && (
+          <p className="text-xs text-zinc-500">
+            Showing
+            {mode ? (
+              <>
+                {" "}
+                <span className="font-medium text-zinc-700">
+                  {MODE_LABELS[mode as keyof typeof MODE_LABELS] || mode}
+                </span>{" "}
+                interest
+              </>
+            ) : null}
+            {vertical ? (
+              <>
+                {" "}
+                in{" "}
+                <span className="font-medium text-zinc-700">
+                  {VERTICALS.find((v) => v.slug === vertical)?.name || vertical}
+                </span>
+              </>
+            ) : null}
+            .{" "}
+            <Link href="/portal/discover" className="underline underline-offset-2">
+              Clear filters
+            </Link>
+          </p>
+        )}
       </header>
 
       <form action="/portal/discover" className="sm:hidden">

@@ -10,6 +10,11 @@ import {
   type MatchInterest,
   type MatchResult,
 } from "@/lib/verticals";
+import {
+  writeMatchIntentCookie,
+  matchDiscoverHref,
+  matchApplyHref,
+} from "@/lib/match-intent";
 
 const INTERESTS: { id: MatchInterest; title: string; desc: string }[] = [
   { id: "sponsor", title: "Sponsor a category", desc: "Put my brand next to premium domains" },
@@ -45,13 +50,18 @@ export default function MatchQuiz() {
     if (!interest) return;
     setCommitment(c);
     startTransition(() => {
-      setResult(
-        matchPartner({
-          interest,
-          verticalSlugs,
-          commitment: c,
-        }),
-      );
+      const matched = matchPartner({
+        interest,
+        verticalSlugs,
+        commitment: c,
+      });
+      writeMatchIntentCookie({
+        mode: matched.mode,
+        verticals: matched.verticals.map((v) => v.slug),
+        commitment: c,
+        primaryVertical: matched.verticals[0]?.slug,
+      });
+      setResult(matched);
       setStep(3);
     });
   };
@@ -115,7 +125,23 @@ export default function MatchQuiz() {
 
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
-            href={result.applyHref}
+            href={matchDiscoverHref({
+              mode: result.mode,
+              verticals: result.verticals.map((v) => v.slug),
+              primaryVertical: result.verticals[0]?.slug,
+              savedAt: Date.now(),
+            })}
+            className="inline-flex items-center justify-center min-h-12 px-6 rounded-xl bg-[var(--ipp-primary)] text-white font-semibold hover:brightness-105"
+          >
+            Browse Discover matches
+          </Link>
+          <Link
+            href={matchApplyHref({
+              mode: result.mode,
+              verticals: result.verticals.map((v) => v.slug),
+              primaryVertical: result.verticals[0]?.slug,
+              savedAt: Date.now(),
+            })}
             className="inline-flex items-center justify-center min-h-12 px-6 rounded-xl bg-[var(--ipp-accent)] text-[var(--ipp-text)] font-semibold hover:brightness-105"
           >
             Apply with this match
@@ -128,6 +154,9 @@ export default function MatchQuiz() {
             Retake quiz
           </button>
         </div>
+        <p className="text-xs text-[var(--ipp-secondary)]">
+          Your match is saved for 30 days — open the portal Matchmaker anytime to continue.
+        </p>
       </div>
     );
   }

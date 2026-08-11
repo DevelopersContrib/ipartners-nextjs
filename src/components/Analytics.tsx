@@ -4,8 +4,8 @@ import Script from "next/script";
 
 /**
  * Sitewide visit analytics (GA4 + Matomo).
- * VNOC tracker.js is injected from root layout so data-domain / data-endpoint
- * bind correctly via document.currentScript (same pattern as VNOC landers).
+ * VNOC tracker.js loads from root layout via next/script (beforeInteractive)
+ * with data-domain / data-endpoint for document.currentScript.
  */
 export default function Analytics() {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;

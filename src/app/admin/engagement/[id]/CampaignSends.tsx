@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { resendEngagementCampaign } from "@/lib/admin-actions";
-import { CAMPAIGN_KEYS } from "@/lib/campaign-keys";
+import { LIFECYCLE_CAMPAIGN_KEYS, NUDGE_CAMPAIGN_KEYS } from "@/lib/campaign-keys";
 
 export type CampaignSendRow = {
   campaignKey: string;
@@ -36,12 +36,12 @@ export default function CampaignSends({
     <section className="rounded-2xl border border-[var(--border)] bg-white p-5 sm:p-6">
       <h2 className="text-sm font-semibold text-[var(--ipp-text)] mb-1">SES campaigns</h2>
       <p className="text-xs text-[var(--ipp-secondary)] mb-4">
-        Automated partner emails. Each campaign sends once per engagement unless you force
-        resend.
+        Lifecycle emails fire on status change. Nudges are daily auto-messages
+        (pending after 3d, approved awaiting publish after 7d).
       </p>
 
       <ul className="space-y-2">
-        {CAMPAIGN_KEYS.map((key) => {
+        {[...LIFECYCLE_CAMPAIGN_KEYS, ...NUDGE_CAMPAIGN_KEYS].map((key) => {
           const row = byKey[key];
           return (
             <li

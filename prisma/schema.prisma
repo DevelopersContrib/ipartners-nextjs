@@ -71,6 +71,8 @@ model IppEngagement {
   termEnd     DateTime? @map("term_end") @db.Date
   sourceTable String?   @map("source_table") @db.VarChar(64)
   sourceId    BigInt?   @map("source_id")
+  /// JSON blob of apply-form answers for admin review (optional).
+  applicationJson String? @map("application_json") @db.MediumText
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -97,6 +99,22 @@ model IppCampaignSend {
   @@index([email], map: "idx_campaign_email")
   @@index([campaignKey], map: "idx_campaign_key")
   @@map("ipp_campaign_send")
+}
+
+/// Partner AI agent chat (pending qualification → recommend approve → Growagent).
+model IppAgentMessage {
+  id           BigInt   @id @default(autoincrement())
+  engagementId BigInt   @map("engagement_id")
+  email        String   @db.VarChar(255)
+  role         String   @db.VarChar(16)
+  content      String   @db.MediumText
+  metaJson     String?  @map("meta_json") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([engagementId], map: "idx_engagement")
+  @@index([email], map: "idx_email")
+  @@index([createdAt], map: "idx_created")
+  @@map("ipp_agent_message")
 }
 
 // ───────────────────── EXISTING — read/write, never migrate ─────────────────────

@@ -39,12 +39,38 @@ export async function POST(req: NextRequest) {
   const referralSource = normalizeInboundRef(
     String(body.referral_source ?? body.ref ?? ''),
   );
+  const mode =
+    coerceMode(String(body.mode ?? '')) ||
+    coerceMode(partnershipType) ||
+    'builder';
+  const vertical = body.vertical ? String(body.vertical).trim() : '';
+  const tierRaw = body.tier ? String(body.tier).trim().toLowerCase() : '';
+  const tier = mode === 'sponsor' && tierRaw ? tierRaw : null;
+
+  if (mode === 'sponsor') {
+    if (!vertical) {
+      return NextResponse.json(
+        { error: 'Sponsor applications require a vertical' },
+        { status: 400 },
+      );
+    }
+    if (!tier || !['bronze', 'silver', 'gold'].includes(tier)) {
+      return NextResponse.json(
+        { error: 'Sponsor applications require a tier (bronze, silver, or gold)' },
+        { status: 400 },
+      );
+    }
+  }
+
   const messageParts = [
     body.message ? String(body.message) : '',
     body.intention ? `Intention: ${body.intention}` : '',
     body.experience ? `Experience: ${body.experience}` : '',
     body.role ? `Role: ${body.role}` : '',
     `Partnership type: ${partnershipType}`,
+    `Mode: ${mode}`,
+    vertical ? `Vertical: ${vertical}` : '',
+    tier ? `Tier: ${tier}` : '',
     referralSource ? `Referred from: ${referralSource}` : '',
   ].filter(Boolean);
 
@@ -87,14 +113,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const mode =
-      coerceMode(String(body.mode ?? '')) ||
-      coerceMode(partnershipType) ||
-      'builder';
-    const vertical = body.vertical ? String(body.vertical).trim() : '';
-    const tier = body.tier ? String(body.tier).trim().toLowerCase() : null;
     const ipartnerId = (data as { ipartner_id?: number }).ipartner_id;
 
+    let engagementId: string | undefined;
     try {
       const engagement = await createEngagement({
         email,
@@ -103,21 +124,44 @@ export async function POST(req: NextRequest) {
         scopeValue: vertical || domain,
         status: 'pending',
         tier: mode === 'sponsor' ? tier : null,
+        applicationJson: {
+          firstname,
+          lastname,
+          email,
+          phone: body.phone ? String(body.phone) : null,
+          company: body.company ? String(body.company) : null,
+          domain,
+          country: body.country ? String(body.country) : null,
+          role: body.role ? String(body.role) : null,
+          industry: body.industry ? String(body.industry) : null,
+          experience: body.experience ? String(body.experience) : null,
+          intention: body.intention ? String(body.intention) : null,
+          message: body.message ? String(body.message) : null,
+          partnershipType,
+          mode,
+          vertical: vertical || null,
+          tier,
+          referral_source: referralSource || null,
+        },
         ...(ipartnerId != null
           ? { sourceTable: 'IPartner' as const, sourceId: ipartnerId }
           : {}),
       });
-      void notifyEngagementStatus(
-        {
-          id: engagement.id,
-          email: engagement.email,
-          mode: engagement.mode,
-          scopeValue: engagement.scopeValue,
-          status: engagement.status,
-          tier: engagement.tier,
-          firstName: firstname || null,
-        },
-      ).catch((err) => console.error('[api/apply] campaign failed:', err));
+      engagementId = String(engagement.id);
+      // Skip lifecycle mail for intake auto-declines (disposable / junk).
+      if (engagement.status !== "declined") {
+        void notifyEngagementStatus(
+          {
+            id: engagement.id,
+            email: engagement.email,
+            mode: engagement.mode,
+            scopeValue: engagement.scopeValue,
+            status: engagement.status,
+            tier: engagement.tier,
+            firstName: firstname || null,
+          },
+        ).catch((err) => console.error('[api/apply] campaign failed:', err));
+      }
     } catch (engErr) {
       console.error('[api/apply] engagement write failed:', engErr);
     }
@@ -125,6 +169,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       ipartner_id: ipartnerId,
+      engagement_id: engagementId,
+      next: '/portal/deals?applied=1',
     });
   } catch (err) {
     console.error('[api/apply]', err);

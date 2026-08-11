@@ -221,12 +221,14 @@ export default function DomainApplyV2Form({
           partnershipGoalsShortLong: values.partnershipGoalsShortLong,
           businessAdviceYoung: values.businessAdviceYoung,
           expectationsContrib: values.expectationsContrib,
+          mode: "domain_owner",
         }),
       });
       const json = (await res.json()) as {
         success: boolean;
         message?: string;
         error?: string;
+        next?: string;
       };
       if (!res.ok || !json.success) {
         setSubmitError(json.error ?? "Failed to submit application");
@@ -234,6 +236,11 @@ export default function DomainApplyV2Form({
       }
       setResultMessage(json.message ?? null);
       setSubmitted(true);
+      if (typeof window !== "undefined") {
+        window.setTimeout(() => {
+          window.location.href = json.next || "/portal/deals?applied=1";
+        }, 2000);
+      }
     } catch {
       setSubmitError("Network error — please try again");
     } finally {
@@ -276,6 +283,13 @@ export default function DomainApplyV2Form({
             {resultMessage ??
               `We've saved your details for ${resolvedDomain}. Our team will follow up at ${values.email} shortly.`}
           </p>
+          <p className="mt-2 text-xs text-zinc-500">Redirecting to your portal deals…</p>
+          <Link
+            href="/portal/deals?applied=1"
+            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-500 px-5 text-sm font-semibold text-black"
+          >
+            Go to Deals
+          </Link>
         </div>
       </div>
     );

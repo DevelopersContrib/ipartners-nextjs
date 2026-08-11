@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { sendEmail, escapeHtml } from '@/lib/ses';
-import { createEngagement } from '@/lib/engagements';
+import { coerceMode, createEngagement } from '@/lib/engagements';
 import { notifyEngagementStatus } from '@/lib/campaigns';
 
 interface ApplyPayload {
@@ -23,6 +23,8 @@ interface ApplyPayload {
   partnershipGoalsShortLong?: string;
   businessAdviceYoung?: string;
   expectationsContrib?: string;
+  /** Optional engagement mode — defaults to domain_owner for this rich domain form. */
+  mode?: string;
 }
 
 function str(v: unknown, max: number): string | null {
@@ -125,30 +127,53 @@ export async function POST(request: NextRequest) {
   );
 
   let engagementId: bigint | null = null;
+  const mode = coerceMode(body.mode) || 'domain_owner';
   try {
     const engagement = await createEngagement({
       email: data.email,
-      mode: 'builder',
+      mode,
       scopeType: 'domain',
       scopeValue: data.domain_name,
       status: 'pending',
       sourceTable: 'IPartner',
       sourceId: id,
+      applicationJson: {
+        firstName,
+        lastName,
+        email: data.email,
+        phone: data.phone,
+        linkedIn: data.linkedin,
+        employer: data.employer,
+        location: data.location,
+        domain: data.domain_name,
+        industry: data.industry,
+        timeCommitment: data.time_commitment,
+        areasOfExpertise: data.areas_of_expertise,
+        ideasMonetization: data.concept_ideas,
+        resourcesBringing: data.resources,
+        partnershipGoalsShortLong: data.partnership_goals,
+        businessAdviceYoung: data.business_advice,
+        resourcesToolsNeeded: data.resources_needed,
+        expectationsContrib: data.expectations,
+        mode,
+      },
     });
     engagementId = engagement.id;
-    void notifyEngagementStatus(
-      {
-        id: engagement.id,
-        email: engagement.email,
-        mode: engagement.mode,
-        scopeValue: engagement.scopeValue,
-        status: engagement.status,
-        tier: engagement.tier,
-        firstName: data.firstname ?? firstName,
-      },
-      // Re-apply / edit should still confirm — force so partners get the update notice.
-      { force: isUpdate, firstName: data.firstname ?? firstName }
-    ).catch((err) => console.error('[ipartner] campaign failed:', err));
+    if (engagement.status !== "declined") {
+      void notifyEngagementStatus(
+        {
+          id: engagement.id,
+          email: engagement.email,
+          mode: engagement.mode,
+          scopeValue: engagement.scopeValue,
+          status: engagement.status,
+          tier: engagement.tier,
+          firstName: data.firstname ?? firstName,
+        },
+        // Re-apply / edit should still confirm — force so partners get the update notice.
+        { force: isUpdate, firstName: data.firstname ?? firstName }
+      ).catch((err) => console.error('[ipartner] campaign failed:', err));
+    }
   } catch (engErr) {
     console.error('[ipartner] engagement write failed:', engErr);
   }
@@ -161,6 +186,7 @@ export async function POST(request: NextRequest) {
     engagement_id: engagementId != null ? String(engagementId) : undefined,
     isUpdate,
     message: humanMessage,
+    next: '/portal/deals?applied=1',
   });
 }
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { MODE_LABELS, statusLabel, type EngagementMode } from "@/lib/engagement-modes";
 import { ENGAGEMENT_STATUSES } from "@/lib/admin-client";
 import DomainReferralLink from "@/components/DomainReferralLink";
+import PendingPartnerAgent from "@/components/portal/PendingPartnerAgent";
 import { formatDomainDisplay } from "@/lib/vertical-brands";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +17,13 @@ export const metadata: Metadata = {
 
 const COLUMNS = ["pending", "approved", "active", "declined", "lapsed"] as const;
 
-export default async function DealsPage() {
+export default async function DealsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ applied?: string }>;
+}) {
   const partner = await requirePartner("/portal/deals");
+  const { applied } = await searchParams;
   const engagements = await prisma.ippEngagement.findMany({
     where: { email: partner.email },
     orderBy: { updatedAt: "desc" },
@@ -27,6 +33,9 @@ export default async function DealsPage() {
   const byStatus = Object.fromEntries(
     COLUMNS.map((s) => [s, engagements.filter((e) => e.status === s)]),
   ) as Record<(typeof COLUMNS)[number], typeof engagements>;
+
+  const approved = byStatus.approved;
+  const pendingChat = byStatus.pending.slice(0, 3);
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6">
@@ -47,6 +56,72 @@ export default async function DealsPage() {
         </Link>
       </header>
 
+      {applied && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-900">
+          Application received. It shows under <strong>pending</strong> while we review —
+          chat with the partner agent below to speed qualification.
+        </div>
+      )}
+
+      {pendingChat.length > 0 && (
+        <div className="space-y-4">
+          {pendingChat.map((e) => (
+            <PendingPartnerAgent
+              key={String(e.id)}
+              engagementId={String(e.id)}
+              scopeLabel={
+                e.scopeValue ||
+                MODE_LABELS[e.mode as EngagementMode] ||
+                e.mode
+              }
+            />
+          ))}
+        </div>
+      )}
+
+      {approved.length > 0 && (
+        <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Approved — activation checklist
+          </h2>
+          <p className="text-xs leading-relaxed text-zinc-500">
+            Approved means iPartner accepted you. <strong>Active</strong> means you are live on
+            the network after publish (managed separately). Until then:
+          </p>
+          <ol className="list-decimal space-y-1.5 pl-4 text-sm text-zinc-700">
+            <li>Confirm each approved deal below looks correct (mode + domain/vertical)</li>
+            <li>Watch for kickoff mail from our team</li>
+            <li>
+              Reply to{" "}
+              <a
+                href="mailto:hello@ipartner.com"
+                className="underline underline-offset-2"
+              >
+                hello@ipartner.com
+              </a>{" "}
+              if anything is wrong before go-live
+            </li>
+          </ol>
+          <ul className="space-y-2 pt-1">
+            {approved.map((e) => (
+              <li
+                key={String(e.id)}
+                className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-2.5 text-sm"
+              >
+                <span className="font-medium">
+                  {MODE_LABELS[e.mode as EngagementMode] || e.mode}
+                </span>
+                {e.scopeValue && (
+                  <span className="ml-2 font-mono text-xs text-zinc-500">
+                    {e.scopeValue}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {engagements.length === 0 ? (
         <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-6 text-center sm:p-8">
           <p className="text-sm text-zinc-600">No deals yet.</p>
@@ -59,7 +134,6 @@ export default async function DealsPage() {
         </div>
       ) : (
         <>
-          {/* Mobile: horizontal snap columns */}
           <div className="-mx-3 snap-x snap-mandatory overflow-x-auto overscroll-x-contain px-3 pb-1 md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex w-max gap-3">
               {COLUMNS.map((status) => (
@@ -83,7 +157,6 @@ export default async function DealsPage() {
             </div>
           </div>
 
-          {/* Desktop / tablet grid */}
           <div className="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-3">
             {COLUMNS.map((status) => (
               <section
@@ -108,8 +181,8 @@ export default async function DealsPage() {
       )}
 
       <p className="text-xs leading-relaxed text-zinc-400">
-        Full negotiation / agreement stages arrive later. Statuses today:{" "}
-        {ENGAGEMENT_STATUSES.join(", ")}.
+        Status meanings: pending = under review · approved = accepted (awaiting publish) ·
+        active = live · {ENGAGEMENT_STATUSES.filter((s) => s === "declined" || s === "lapsed").join(" · ")}.
       </p>
     </div>
   );

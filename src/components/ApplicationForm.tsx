@@ -1,9 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { PartnershipType } from '@/lib/types';
 import { PARTNERSHIP_LABELS } from '@/lib/partnerships';
 import type { EngagementMode } from '@/lib/engagement-modes';
+import { VERTICALS } from '@/lib/verticals';
+import { SPONSOR_TIERS } from '@/lib/admin-client';
+import { FALLBACK_FORM_DATA, FALLBACK_COUNTRIES, resolveFormData } from '@/lib/form-options';
 
 interface ApplicationFormProps {
   partnershipType: PartnershipType;
@@ -79,23 +84,21 @@ export default function ApplicationForm({
   vertical,
   tier,
 }: ApplicationFormProps) {
+  const router = useRouter();
   // If we already know who they are, don't make them retype it — start at Profile.
   const [step, setStep] = useState(initialEmail ? 2 : 1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [countries, setCountries] = useState<SelectOption[]>([]);
-  const [formOptions, setFormOptions] = useState<{
-    roles: SelectOption[];
-    industries: SelectOption[];
-    experiences: SelectOption[];
-    intentions: SelectOption[];
-  }>({ roles: [], industries: [], experiences: [], intentions: [] });
+  const [sponsorVertical, setSponsorVertical] = useState(vertical || '');
+  const [sponsorTier, setSponsorTier] = useState(tier || '');
+  const [countries, setCountries] = useState<SelectOption[]>(FALLBACK_COUNTRIES);
+  const [formOptions, setFormOptions] = useState(FALLBACK_FORM_DATA);
 
   const [formData, setFormData] = useState<FormData>({
     email: initialEmail,
     firstname: initialProfile?.firstname || '',
     lastname: initialProfile?.lastname || '',
-    domain: '',
+    domain: domain && domain !== 'ipartner.com' ? domain : '',
     country: '',
     role: '',
     industry: '',
@@ -107,13 +110,28 @@ export default function ApplicationForm({
   useEffect(() => {
     fetch('/api/countries')
       .then((res) => res.json())
-      .then((data) => { if (data.countries) setCountries(data.countries); })
+      .then((data) => {
+        if (Array.isArray(data.countries) && data.countries.length > 0) {
+          setCountries(
+            data.countries
+              .map((c: { id?: string; name?: string }, i: number) => ({
+                id: String(c.id || i + 1),
+                name: String(c.name || '').trim(),
+              }))
+              .filter((c: SelectOption) => c.name),
+          );
+        }
+      })
       .catch(() => {});
 
     fetch('/api/config')
       .then((res) => res.json())
-      .then((data) => { if (data.formData) setFormOptions(data.formData); })
-      .catch(() => {});
+      .then((data) => {
+        setFormOptions(resolveFormData(data?.formData));
+      })
+      .catch(() => {
+        setFormOptions(FALLBACK_FORM_DATA);
+      });
   }, []);
 
   // Resolve the known country/industry once their option lists have loaded.
@@ -156,6 +174,16 @@ export default function ApplicationForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (engagementMode === 'sponsor') {
+      if (!sponsorVertical.trim()) {
+        alert('Please select a vertical for sponsor interest.');
+        return;
+      }
+      if (!sponsorTier.trim()) {
+        alert('Please select a sponsorship tier.');
+        return;
+      }
+    }
     setLoading(true);
     try {
       const referralSource =
@@ -176,8 +204,8 @@ export default function ApplicationForm({
           partnershipType,
           domain: formData.domain || domain,
           mode: engagementMode,
-          vertical,
-          tier,
+          vertical: engagementMode === 'sponsor' ? sponsorVertical : vertical,
+          tier: engagementMode === 'sponsor' ? sponsorTier : tier,
           referral_source: referralSource
             ? decodeURIComponent(referralSource)
             : undefined,
@@ -186,6 +214,9 @@ export default function ApplicationForm({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Submission failed');
       setSubmitted(true);
+      const next = typeof data.next === 'string' ? data.next : '/portal/deals?applied=1';
+      // Land signed-in partners on Deals; login redirect handles guests.
+      window.setTimeout(() => router.push(next), 1200);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Submission failed. Please try again.');
     } finally {
@@ -206,8 +237,14 @@ export default function ApplicationForm({
           <p className="text-[var(--ipp-secondary)] leading-relaxed">
             Thank you for applying
             {engagementMode === 'sponsor' ? ' as a sponsor' : ` for a ${PARTNERSHIP_LABELS[partnershipType]}`}.
-            We&apos;ll review your application and get back to you soon.
+            Taking you to your deals…
           </p>
+          <Link
+            href="/portal/deals?applied=1"
+            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--ipp-accent)] px-5 text-sm font-semibold text-[var(--ipp-text)]"
+          >
+            Go to Deals
+          </Link>
         </div>
       </div>
     );
@@ -333,6 +370,51 @@ export default function ApplicationForm({
 
         {step === 3 && (
           <div className="space-y-5">
+            {engagementMode === 'sponsor' && (
+              <>
+                <div>
+                  <label htmlFor="sponsorVertical" className={labelClass}>
+                    Vertical *
+                  </label>
+                  <select
+                    id="sponsorVertical"
+                    value={sponsorVertical}
+                    onChange={(e) => setSponsorVertical(e.target.value)}
+                    required
+                    className={inputClass}
+                  >
+                    <option value="">Select a vertical</option>
+                    {VERTICALS.map((v) => (
+                      <option key={v.slug} value={v.slug}>
+                        {v.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="sponsorTier" className={labelClass}>
+                    Sponsorship tier *
+                  </label>
+                  <select
+                    id="sponsorTier"
+                    value={sponsorTier}
+                    onChange={(e) => setSponsorTier(e.target.value)}
+                    required
+                    className={inputClass}
+                  >
+                    <option value="">Select tier</option>
+                    {SPONSOR_TIERS.map((t) => (
+                      <option key={t} value={t} className="capitalize">
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-[var(--ipp-secondary)]">
+                    Checkout is not live yet — this registers sponsor interest for follow-up.
+                  </p>
+                </div>
+              </>
+            )}
             <div>
               <label htmlFor="role" className={labelClass}>Role *</label>
               <select id="role" name="role" value={formData.role} onChange={handleChange} required className={inputClass}>
