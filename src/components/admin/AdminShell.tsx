@@ -43,6 +43,18 @@ export default function AdminShell({
             >
               New
             </Link>
+            <Link
+              href="/admin/support"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--ipp-secondary)] hover:bg-[var(--ipp-bg)] hover:text-[var(--ipp-text)]"
+            >
+              Support Inbox
+            </Link>
+            <Link
+              href="/admin/emails-ai"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--ipp-secondary)] hover:bg-[var(--ipp-bg)] hover:text-[var(--ipp-text)]"
+            >
+              Emails &amp; AI
+            </Link>
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
@@ -97,6 +109,18 @@ export default function AdminShell({
             className="shrink-0 rounded-lg px-3 py-2 text-xs font-medium text-[var(--ipp-secondary)]"
           >
             New
+          </Link>
+          <Link
+            href="/admin/support"
+            className="shrink-0 rounded-lg px-3 py-2 text-xs font-medium text-[var(--ipp-secondary)]"
+          >
+            Support
+          </Link>
+          <Link
+            href="/admin/emails-ai"
+            className="shrink-0 rounded-lg px-3 py-2 text-xs font-medium text-[var(--ipp-secondary)]"
+          >
+            Emails &amp; AI
           </Link>
           <Link
             href="/portal"

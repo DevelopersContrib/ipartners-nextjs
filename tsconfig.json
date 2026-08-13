@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,7 +23,18 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@contrib/mail": [
+        "./modules/mail/src/index.ts"
+      ],
+      "@contrib/support-autoresponder": [
+        "./modules/support-autoresponder/src/index.ts"
+      ],
+      "@contrib/engagement": [
+        "./modules/engagement/src/index.ts"
+      ]
     }
   },
   "include": [
@@ -30,5 +45,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "modules",
+    "node_modules",
+    "workers"
+  ]
 }

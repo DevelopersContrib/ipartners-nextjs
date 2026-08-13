@@ -1,0 +1,9 @@
+name = "ipartner-support-inbound"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+[vars]
+WEBHOOK_URL = "https://www.ipartners.com/api/webhooks/support-inbound"
+
+# Set secret:
+#   cd workers/support-inbound && npx wrangler secret put SUPPORT_INBOUND_WEBHOOK_SECRET
