@@ -47,7 +47,7 @@ export default function DomainApplyV2Page() {
             Complete the form to apply for a domain partnership with iPartner.
             Prefer the classic embed? See{" "}
             <a
-              href="/domain/apply#apply-form"
+              href="/apply?mode=domain_owner"
               className="text-emerald-400/90 hover:text-emerald-300 underline-offset-2 hover:underline"
             >
               the original application page

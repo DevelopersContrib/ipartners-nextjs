@@ -20,6 +20,29 @@ export const MODE_LABELS: Record<EngagementMode, string> = {
   referrer: "Referrer",
 };
 
+/** Short copy for marketing pickers (apply, about, legacy landers). */
+export const MODE_DESCRIPTIONS: Record<EngagementMode, string> = {
+  sponsor:
+    "Category placement across a vertical — Bronze, Silver, or Gold (annual).",
+  builder: "Equity-style partnership. Help grow a domain brand with us.",
+  domain_owner: "Bring a premium name into the network and activate it.",
+  app: "Ship or distribute an app across ventures that need it.",
+  operator: "Lead day-to-day execution on a venture brand.",
+  vendor: "Offer products or services across ventures that need you.",
+  referrer: "Send traffic and introductions. Earn when they convert.",
+};
+
+/** Modes shown on the public apply picker (ordered for conversion). */
+export const APPLY_PICKER_MODES: EngagementMode[] = [
+  "sponsor",
+  "builder",
+  "domain_owner",
+  "referrer",
+  "vendor",
+  "operator",
+  "app",
+];
+
 export function coerceMode(raw?: string | null): EngagementMode | undefined {
   if (!raw) return undefined;
   const t = raw.trim().toLowerCase().replace(/-/g, "_");

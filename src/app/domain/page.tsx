@@ -23,10 +23,10 @@ export default function DomainPage() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">Domain Partnerships</h1>
           <p className="mt-6 text-lg sm:text-xl text-green-100/70 max-w-2xl mx-auto leading-relaxed">Partner with premium domain names and help monetize and build the brands of the future. Earn equity through your contributions.</p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/domain/apply#apply-form" className="inline-flex items-center justify-center bg-green-500 text-black px-8 py-4 rounded-xl text-lg font-bold hover:bg-green-400 transition-all shadow-lg shadow-green-500/25">
+            <Link href="/apply?mode=domain_owner" className="inline-flex items-center justify-center bg-green-500 text-black px-8 py-4 rounded-xl text-lg font-bold hover:bg-green-400 transition-all shadow-lg shadow-green-500/25">
               Apply Now <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
             </Link>
-            <a href="#pricing" className="inline-flex items-center justify-center glass text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/10 transition-all">View Pricing</a>
+            <a href="#pricing" className="inline-flex items-center justify-center glass text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/10 transition-all">How to join</a>
           </div>
         </div>
       </section>
@@ -51,8 +51,8 @@ export default function DomainPage() {
       <section id="pricing" className="py-20 sm:py-24 px-4 bg-[#0A0F0D]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white">Partnership Tiers</h2>
-            <p className="mt-4 text-[#5A6E62] max-w-xl mx-auto">Choose the level that works for you and start building today.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">How to join</h2>
+            <p className="mt-4 text-[#5A6E62] max-w-xl mx-auto">One apply path — domain owners, builders, and annual category sponsors.</p>
           </div>
           <PricingTiers />
         </div>

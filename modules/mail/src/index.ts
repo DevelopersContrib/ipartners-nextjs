@@ -5,6 +5,5 @@ export {
   sesRegion,
   defaultFromEmail,
   sendViaSes,
-  sendViaResend,
 } from "./send";
 export { createAppSendEmail } from "./create";

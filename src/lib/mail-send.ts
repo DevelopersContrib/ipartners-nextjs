@@ -7,6 +7,11 @@ export {
 
 import { createAppSendEmail, defaultFromEmail as moduleDefaultFrom } from "@contrib/mail";
 
+// iPartner is SES-only — never resolve the optional Resend package.
+if (!process.env.EMAIL_PROVIDER?.trim()) {
+  process.env.EMAIL_PROVIDER = "ses";
+}
+
 const IPP_FROM_FALLBACK = "hello@ipartner.com";
 
 export function ippDefaultFromEmail(): string {

@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.109.0",
+    "@paydirectv2/react-widgets": "^0.1.0",
     "@prisma/client": "^6.19.3",
     "lucide-react": "^1.31.0",
     "next": "16.2.2",

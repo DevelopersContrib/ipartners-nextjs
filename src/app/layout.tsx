@@ -66,7 +66,9 @@ function isAppShell(pathname: string) {
     pathname === "/portal" ||
     pathname.startsWith("/portal/") ||
     pathname === "/admin" ||
-    pathname.startsWith("/admin/")
+    pathname.startsWith("/admin/") ||
+    pathname === "/checkout" ||
+    pathname.startsWith("/checkout/")
   );
 }
 

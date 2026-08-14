@@ -17,7 +17,7 @@ export default function ProductServicePage() {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-full text-orange-200 text-sm font-medium mb-8">Launch & Scale</div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">Product &amp; Service Partnerships</h1>
           <p className="mt-6 text-lg sm:text-xl text-orange-100/70 max-w-2xl mx-auto leading-relaxed">Bring your products and services to market through our global partnership network.</p>
-          <div className="mt-10"><Link href="/product-service/apply#apply-form" className="inline-flex items-center justify-center bg-orange-400 text-black px-8 py-4 rounded-xl text-lg font-bold hover:bg-orange-300 transition-all shadow-lg">Apply Now <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg></Link></div>
+          <div className="mt-10"><Link href="/apply?mode=vendor" className="inline-flex items-center justify-center bg-orange-400 text-black px-8 py-4 rounded-xl text-lg font-bold hover:bg-orange-300 transition-all shadow-lg">Apply Now <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg></Link></div>
         </div>
       </section>
       <section className="py-20 sm:py-24 px-4 bg-[#0D1210]">
@@ -31,7 +31,7 @@ export default function ProductServicePage() {
               </div>
             ))}
           </div>
-          <div className="mt-16 text-center"><Link href="/product-service/apply#apply-form" className="inline-flex items-center justify-center bg-orange-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-500 transition-all shadow-lg shadow-orange-600/20">Start Your Partnership</Link></div>
+          <div className="mt-16 text-center"><Link href="/apply?mode=vendor" className="inline-flex items-center justify-center bg-orange-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-500 transition-all shadow-lg shadow-orange-600/20">Start Your Partnership</Link></div>
         </div>
       </section>
     </>

@@ -2,20 +2,19 @@
 
 Portable outbound email for `@contrib/*` modules and domain apps.
 
-**Two providers — pick one via env:**
+**This app uses AWS SES only.** There is no Resend integration.
 
-| Provider | When | Required env |
-|----------|------|----------------|
-| **Resend** | `EMAIL_PROVIDER=resend` or `RESEND_API_KEY` set (default when key present) | `RESEND_API_KEY` |
-| **AWS SES** | `EMAIL_PROVIDER=ses` or no Resend key | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `SES_REGION` |
+| Provider | Required env |
+|----------|----------------|
+| **AWS SES** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` (or `SES_REGION`) |
 
-Force SES while keeping a Resend key for rollback: `EMAIL_PROVIDER=ses`.
+Also used: `SES_FROM_EMAIL` (and optional `SUPPORT_FROM_EMAIL` / `CONTACT_EMAIL` as From fallbacks).
 
-## Install
+## Install (copy to another domain)
 
 ```bash
 cp -R modules/mail /path/to/other-domain/modules/mail
-pnpm add resend @aws-sdk/client-ses   # both optional at runtime; install what you use
+pnpm add @aws-sdk/client-ses
 ```
 
 Path alias:
@@ -27,9 +26,10 @@ Path alias:
 ## Usage
 
 ```ts
-import { createAppSendEmail, emailConfigured, emailProvider } from "@contrib/mail";
+import { createAppSendEmail, emailConfigured } from "@contrib/mail";
 
-void sendSupportAutoresponder(config, input, createAppSendEmail());
+const send = createAppSendEmail();
+await send({ from, to, subject, text, html });
 ```
 
-Supports `fromName`, `replyTo`, and `listUnsubscribeUrl` (RFC 8058) on both providers.
+Supports `fromName`, `replyTo`, and `listUnsubscribeUrl` (RFC 8058) via SES raw MIME.

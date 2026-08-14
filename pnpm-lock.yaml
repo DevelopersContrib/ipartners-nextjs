@@ -11,6 +11,9 @@ importers:
       '@aws-sdk/client-ses':
         specifier: ^3.109.0
         version: 3.1109.0
+      '@paydirectv2/react-widgets':
+        specifier: ^0.1.0
+        version: 0.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@prisma/client':
         specifier: ^6.19.3
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
@@ -659,6 +662,13 @@ packages:
   '@nolyfill/is-core-module@1.0.39':
     resolution: {integrity: sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==}
     engines: {node: '>=12.4.0'}
+
+  '@paydirectv2/react-widgets@0.1.0':
+    resolution: {integrity: sha512-SnctfSDULeV8tvcrEESskctfe7lpowf6GZJQXoIUrJKjnsfs6Bh6qj7akE2OoRUbJvwnsr8ubdAmAmzSV1jHLg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: '>=17'
+      react-dom: '>=17'
 
   '@prisma/client@6.19.3':
     resolution: {integrity: sha512-mKq3jQFhjvko5LTJFHGilsuQs+W+T3Gm451NzuTDGQxwCzwXHYnIu2zGkRoW+Exq3Rob7yp2MfzSrdIiZVhrBg==}
@@ -2995,6 +3005,11 @@ snapshots:
       fastq: 1.20.1
 
   '@nolyfill/is-core-module@1.0.39': {}
+
+  '@paydirectv2/react-widgets@0.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
 
   '@prisma/client@6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)':
     optionalDependencies:

@@ -12,7 +12,7 @@ Other platforms may use **MySQL**, **PostgreSQL**, or a different ORM. The modul
 | `@contrib/engagement` (core) | **Via interface** | Implement `EngagementStore` — no Prisma/Drizzle inside the module |
 | Support inbox (app pattern) | **Yes** | Not a npm module yet; copy schema + ticket helpers per app |
 
-**Mail** is swappable via `@contrib/mail`: **AWS SES** or **Resend** (`EMAIL_PROVIDER=ses|resend`). See `modules/mail/README.md`.
+**Mail** is SES via `@contrib/mail` (`EMAIL_PROVIDER=ses`). Resend is not bundled in this app.
 
 ---
 

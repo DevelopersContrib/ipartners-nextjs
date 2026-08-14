@@ -237,9 +237,9 @@ Admins can resend certain campaign emails from an engagement's detail page in /a
 • Newsletter sponsorship
 • Podcast / media
 
-Checkout and live inventory booking are not shipped yet. Use Register sponsor interest to submit a sponsor-mode application. Our team follows up manually.
+Checkout is live for annual Bronze / Silver / Gold sponsorship via PayDirect (card or crypto). From Placements or the marketing pricing section, open checkout for a tier, or apply with mode=sponsor if you want a conversation first.
 
-When self-serve booking launches, this page will connect to priced inventory. Until then, treat it as a guided path into the sponsor apply track.`,
+Live slot-level inventory booking (homepage hero, newsletter, podcast) is still guided — use apply or contact for custom packages beyond the three annual tiers.`,
   },
   {
     slug: "ai-matchmaker",

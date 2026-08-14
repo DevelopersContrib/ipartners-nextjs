@@ -1,19 +1,13 @@
 {
   "name": "@contrib/mail",
-  "version": "1.0.0",
   "private": true,
-  "description": "Portable email dispatch — AWS SES or Resend, selected via EMAIL_PROVIDER.",
-  "type": "module",
+  "version": "0.1.0",
+  "description": "Portable outbound mail — SES (iPartner). Resend not bundled.",
   "main": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts"
-  },
   "peerDependencies": {
-    "@aws-sdk/client-ses": ">=3",
-    "resend": ">=4"
+    "@aws-sdk/client-ses": ">=3"
   },
   "peerDependenciesMeta": {
-    "@aws-sdk/client-ses": { "optional": true },
-    "resend": { "optional": true }
+    "@aws-sdk/client-ses": { "optional": false }
   }
 }

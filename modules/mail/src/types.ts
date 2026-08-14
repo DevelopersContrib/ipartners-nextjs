@@ -1,4 +1,4 @@
-export type MailProvider = "ses" | "resend";
+export type MailProvider = "ses";
 
 export type AppSendEmailArgs = {
   from: string;
@@ -19,5 +19,4 @@ export type AppSendEmailOptions = {
   region?: string;
   accessKeyId?: string;
   secretAccessKey?: string;
-  resendApiKey?: string;
 };

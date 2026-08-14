@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sponsorCheckoutHref } from "@/lib/sponsor-pricing";
 
 const TIERS = [
   {
@@ -10,7 +11,7 @@ const TIERS = [
       "Brand placement on category pages in one vertical",
       "Product or service listing in relevant project types",
       "Logo, link, and description on partner placements",
-      "Listing in the public partner directory",
+      "Listed on the vertical page once your sponsorship is live",
     ],
     featured: false,
   },
@@ -58,7 +59,7 @@ export default function SponsorshipPricing() {
         </h2>
         <p className="mt-4 max-w-2xl text-[var(--ipp-secondary)] leading-relaxed">
           Bronze puts you in the category. Silver puts you across it, with the numbers to prove it.
-          Gold makes sure no one else is there.
+          Gold makes sure no one else is there. Checkout via PayDirect (card or crypto).
         </p>
 
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5 items-stretch">
@@ -92,7 +93,10 @@ export default function SponsorshipPricing() {
               </p>
               <ul className="mt-6 space-y-3 flex-1">
                 {t.features.map((f) => (
-                  <li key={f} className="flex gap-2.5 text-sm text-[var(--ipp-secondary)] leading-relaxed">
+                  <li
+                    key={f}
+                    className="flex gap-2.5 text-sm text-[var(--ipp-secondary)] leading-relaxed"
+                  >
                     <span
                       className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ipp-accent)]"
                       aria-hidden
@@ -102,23 +106,23 @@ export default function SponsorshipPricing() {
                 ))}
               </ul>
               <Link
-                href={`/apply?mode=sponsor&tier=${t.tier.toLowerCase()}`}
+                href={sponsorCheckoutHref({ tier: t.tier.toLowerCase() })}
                 className={`mt-8 inline-flex items-center justify-center min-h-12 px-5 rounded-xl font-semibold transition ${
                   t.featured
                     ? "bg-[var(--ipp-accent)] text-[var(--ipp-text)] hover:brightness-105"
                     : "bg-[var(--ipp-primary)] text-white hover:opacity-90"
                 }`}
               >
-                I&apos;m interested
+                Checkout
               </Link>
             </article>
           ))}
         </div>
 
         <p className="mt-8 text-sm text-[var(--ipp-secondary)] max-w-3xl leading-relaxed">
-          Categories vary in size. We publish the domain count before you sign — no undisclosed
-          inventory. Apply to reserve interest; checkout comes next. Until then, every Gold seat
-          shows as <span className="font-medium text-[var(--ipp-text)]">available</span>.
+          Categories vary in size. We publish the domain count before you go live — no
+          undisclosed inventory. Pay annually via PayDirect; your sponsorship engagement is
+          approved when payment settles.
         </p>
       </div>
     </section>

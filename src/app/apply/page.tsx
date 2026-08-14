@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Apply for a Partnership - iPartner',
-  description: 'Choose your partnership type and apply to join iPartner.',
+  description: 'Choose how you want to partner — sponsor, builder, domain owner, and more.',
 };
 
 const IPARTNER_TYPES: PartnershipType[] = ['domain', 'apps', 'leaders', 'product-service'];

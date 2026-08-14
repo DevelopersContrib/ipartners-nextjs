@@ -1,5 +1,6 @@
 import type { PartnershipType } from '@/lib/types';
 
+/** Legacy type labels kept for ApplicationForm / admin display. Prefer engagement modes for CTAs. */
 export const PARTNERSHIP_OPTIONS: {
   type: PartnershipType;
   title: string;
@@ -10,25 +11,25 @@ export const PARTNERSHIP_OPTIONS: {
     type: 'domain',
     title: 'Domain Partnership',
     description: 'Partner with premium domain assets and build brand value through equity-based collaboration.',
-    href: '/domain/apply',
+    href: '/apply?mode=domain_owner',
   },
   {
     type: 'apps',
     title: 'App Partnership',
     description: 'Collaborate on application development, distribution, and monetization.',
-    href: '/apps/apply',
+    href: '/apply?mode=app',
   },
   {
     type: 'leaders',
     title: 'Leader Partnership',
     description: 'Guide initiatives, mentor partners, and shape our collective future.',
-    href: '/leaders/apply',
+    href: '/apply?mode=operator',
   },
   {
     type: 'product-service',
     title: 'Product & Service',
     description: 'Bring your products and services to market through our partnership channels.',
-    href: '/product-service/apply',
+    href: '/apply?mode=vendor',
   },
 ];
 

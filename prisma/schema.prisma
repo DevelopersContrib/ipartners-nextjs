@@ -117,6 +117,30 @@ model IppAgentMessage {
   @@map("ipp_agent_message")
 }
 
+/// PayDirect (and future PSP) payment records for sponsor checkout.
+model IppPayment {
+  id                BigInt   @id @default(autoincrement())
+  engagementId      BigInt?  @map("engagement_id")
+  email             String   @db.VarChar(255)
+  provider          String   @default("paydirect") @db.VarChar(32)
+  providerPaymentId String   @map("provider_payment_id") @db.VarChar(191)
+  status            String   @default("created") @db.VarChar(32)
+  tier              String?  @db.VarChar(32)
+  vertical          String?  @db.VarChar(255)
+  amount            String   @db.VarChar(32)
+  currency          String   @default("USD") @db.VarChar(16)
+  paymentMethod     String?  @map("payment_method") @db.VarChar(32)
+  metadataJson      String?  @map("metadata_json") @db.Text
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([provider, providerPaymentId], map: "uq_provider_payment")
+  @@index([email], map: "idx_email")
+  @@index([engagementId], map: "idx_engagement")
+  @@index([status], map: "idx_status")
+  @@map("ipp_payment")
+}
+
 // ───────────────────── EXISTING — read/write, never migrate ─────────────────────
 
 /// Contrib member store (108k rows) — the identity source of truth.
