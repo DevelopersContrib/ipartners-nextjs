@@ -5,8 +5,15 @@ import { requireAdmin, ENGAGEMENT_STATUSES } from "@/lib/admin";
 import { ENGAGEMENT_MODES } from "@/lib/engagement-modes";
 import { getBacklogKpis, rankEngagementsForTriage, OPS_TARGETS } from "@/lib/admin-triage";
 import { isFraudAiConfigured } from "@/lib/fraud-screen";
+import {
+  getLatestReviews,
+  isReviewVerdict,
+  REVIEW_VERDICTS,
+  VERDICT_LABELS,
+} from "@/lib/engagement-review";
 import AdminQueue, { type QueueRow } from "./AdminQueue";
 import FraudSweep from "./FraudSweep";
+import ReviewSweep from "./ReviewSweep";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +33,7 @@ export default async function AdminPage({
     q?: string;
     page?: string;
     sort?: string;
+    ai?: string;
   }>;
 }) {
   const admin = await requireAdmin();
@@ -48,6 +56,10 @@ export default async function AdminPage({
     params.sort === "newest"
       ? false
       : statusFilter === "pending" || params.sort === "triage";
+  const aiFilter =
+    params.ai === "unreviewed" || (params.ai && isReviewVerdict(params.ai))
+      ? params.ai
+      : undefined;
 
   const where = {
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
@@ -57,17 +69,27 @@ export default async function AdminPage({
       : {}),
   };
 
-  const [rawRows, total, byStatus, kpis] = await Promise.all([
+  const REVIEW_WINDOW = Math.min(300, PAGE_SIZE * 6);
+
+  const [rawRows, total, byStatus, kpis, pendingWindow] = await Promise.all([
     prisma.ippEngagement.findMany({
       where,
       // Fetch a wider window when ranking pending so triage isn't page-local only.
       orderBy: { id: "desc" },
       skip: sortTriage ? 0 : (page - 1) * PAGE_SIZE,
-      take: sortTriage ? Math.min(300, PAGE_SIZE * 6) : PAGE_SIZE,
+      take: sortTriage ? REVIEW_WINDOW : PAGE_SIZE,
     }),
     prisma.ippEngagement.count({ where }),
     prisma.ippEngagement.groupBy({ by: ["status"], _count: { _all: true } }),
     getBacklogKpis(),
+    // Drives the "not screened yet" count on the pre-screen panel, independent
+    // of whichever filter the admin is currently looking at.
+    prisma.ippEngagement.findMany({
+      where: { status: "pending" },
+      select: { id: true },
+      orderBy: { id: "desc" },
+      take: REVIEW_WINDOW,
+    }),
   ]);
 
   const ranked = sortTriage
@@ -80,13 +102,41 @@ export default async function AdminPage({
         visitors30d: 0,
       }));
 
-  const pageSlice = sortTriage
-    ? ranked.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const reviews = await getLatestReviews([
+    ...new Set([...ranked.map((r) => r.id), ...pendingWindow.map((r) => r.id)]),
+  ]);
+
+  const unreviewedCount = pendingWindow.filter(
+    (r) => !reviews.has(String(r.id)),
+  ).length;
+
+  const verdictCounts = pendingWindow.reduce<Record<string, number>>(
+    (acc, r) => {
+      const verdict = reviews.get(String(r.id))?.verdict;
+      if (verdict) acc[verdict] = (acc[verdict] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
+
+  const visible = aiFilter
+    ? ranked.filter((r) => {
+        const review = reviews.get(String(r.id));
+        return aiFilter === "unreviewed"
+          ? !review
+          : review?.verdict === aiFilter;
+      })
     : ranked;
+
+  const pageSlice = sortTriage
+    ? visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    : visible;
 
   const counts = Object.fromEntries(byStatus.map((s) => [s.status, s._count._all]));
   const allCount = Object.values(counts).reduce((a, b) => a + b, 0);
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pages = aiFilter
+    ? Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
+    : Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const queueRows: QueueRow[] = pageSlice.map((r) => ({
     id: String(r.id),
@@ -100,6 +150,7 @@ export default async function AdminPage({
     triageScore: "triageScore" in r ? r.triageScore : undefined,
     ageDays: "ageDays" in r ? r.ageDays : undefined,
     visitors30d: "visitors30d" in r ? r.visitors30d : undefined,
+    review: reviews.get(String(r.id)) ?? null,
   }));
 
   const filterHref = (next: Record<string, string | undefined>) => {
@@ -108,6 +159,7 @@ export default async function AdminPage({
       mode,
       q,
       sort: sortTriage ? "triage" : params.sort,
+      ai: aiFilter,
       ...next,
     };
     const sp = new URLSearchParams();
@@ -115,6 +167,7 @@ export default async function AdminPage({
     if (merged.mode) sp.set("mode", merged.mode);
     if (merged.q) sp.set("q", merged.q);
     if (merged.sort) sp.set("sort", merged.sort);
+    if (merged.ai) sp.set("ai", merged.ai);
     if (next.page) sp.set("page", next.page);
     return `/admin?${sp.toString()}`;
   };
@@ -183,17 +236,32 @@ export default async function AdminPage({
         </section>
 
         <section className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--ipp-secondary)]">
-          <p className="font-semibold text-[var(--ipp-text)]">Operating rhythm</p>
+          <p className="font-semibold text-[var(--ipp-text)]">How to work this queue</p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-relaxed">
             <li>
-              <strong className="font-medium text-[var(--ipp-text)]">Daily (~15 min):</strong>{" "}
-              work the top {OPS_TARGETS.dailyTriageTopN} by triage score (pending queue,
-              sort: triage).
+              <strong className="font-medium text-[var(--ipp-text)]">1. Screen:</strong>{" "}
+              the AI pre-screen runs nightly, or click it below. Each pending row then
+              carries a verdict, who the applicant is, and why.
             </li>
             <li>
-              <strong className="font-medium text-[var(--ipp-text)]">Weekly:</strong> run
-              AI fraud auto-decline (preview → CONFIRM) for disposable/spam junk, then a
-              manual bulk-decline pass for anything left.
+              <strong className="font-medium text-[var(--ipp-text)]">
+                2. Confirm the easy ones:
+              </strong>{" "}
+              filter to <em>AI: approve</em>, hit &ldquo;Select all AI-approve&rdquo;, then
+              approve with a reason + CONFIRM. Same for AI-decline.
+            </li>
+            <li>
+              <strong className="font-medium text-[var(--ipp-text)]">
+                3. Read the rest:
+              </strong>{" "}
+              <em>needs info</em> and <em>read it</em> are the ones that actually want your
+              judgement — open those and decide. Nothing is ever auto-approved.
+            </li>
+            <li>
+              <strong className="font-medium text-[var(--ipp-text)]">Daily (~15 min):</strong>{" "}
+              work the top {OPS_TARGETS.dailyTriageTopN} by triage score. Triage score is
+              urgency (age + completeness + traffic), not quality — the AI verdict is the
+              quality read.
             </li>
             <li>
               Targets: median pending age under {OPS_TARGETS.medianPendingAgeDaysMax}{" "}
@@ -203,6 +271,11 @@ export default async function AdminPage({
             </li>
           </ul>
         </section>
+
+        <ReviewSweep
+          aiConfigured={isFraudAiConfigured()}
+          unreviewedCount={unreviewedCount}
+        />
 
         <FraudSweep aiConfigured={isFraudAiConfigured()} />
 
@@ -261,6 +334,7 @@ export default async function AdminPage({
             <input type="hidden" name="status" value={statusFilter} />
             {mode && <input type="hidden" name="mode" value={mode} />}
             {sortTriage && <input type="hidden" name="sort" value="triage" />}
+            {aiFilter && <input type="hidden" name="ai" value={aiFilter} />}
             <input
               type="search"
               name="q"
@@ -269,6 +343,33 @@ export default async function AdminPage({
               className="min-h-10 w-52 rounded-lg border border-[var(--border)] bg-white px-3 text-sm"
             />
           </form>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-[var(--ipp-secondary)]">
+            AI verdict
+          </span>
+          <Link
+            href={filterHref({ ai: undefined, page: undefined })}
+            className={`rounded-md border px-2.5 py-1 text-xs ${!aiFilter ? "border-[var(--ipp-primary)] bg-[var(--ipp-primary)]/10 text-[var(--ipp-text)]" : "border-[var(--border)] bg-white text-[var(--ipp-secondary)]"}`}
+          >
+            any
+          </Link>
+          {REVIEW_VERDICTS.map((v) => (
+            <Link
+              key={v}
+              href={filterHref({ ai: v, page: undefined })}
+              className={`rounded-md border px-2.5 py-1 text-xs tabular-nums ${aiFilter === v ? "border-[var(--ipp-primary)] bg-[var(--ipp-primary)]/10 text-[var(--ipp-text)]" : "border-[var(--border)] bg-white text-[var(--ipp-secondary)]"}`}
+            >
+              {VERDICT_LABELS[v]} · {verdictCounts[v] ?? 0}
+            </Link>
+          ))}
+          <Link
+            href={filterHref({ ai: "unreviewed", page: undefined })}
+            className={`rounded-md border px-2.5 py-1 text-xs tabular-nums ${aiFilter === "unreviewed" ? "border-[var(--ipp-primary)] bg-[var(--ipp-primary)]/10 text-[var(--ipp-text)]" : "border-[var(--border)] bg-white text-[var(--ipp-secondary)]"}`}
+          >
+            not screened · {unreviewedCount}
+          </Link>
         </div>
 
         {mode === "sponsor" && (
@@ -283,9 +384,11 @@ export default async function AdminPage({
         {pages > 1 && (
           <div className="flex items-center justify-between text-sm text-[var(--ipp-secondary)]">
             <span className="tabular-nums">
-              {total.toLocaleString("en-US")} result{total === 1 ? "" : "s"} · page{" "}
-              {page} of {pages.toLocaleString("en-US")}
+              {(aiFilter ? visible.length : total).toLocaleString("en-US")} result
+              {(aiFilter ? visible.length : total) === 1 ? "" : "s"} · page {page} of{" "}
+              {pages.toLocaleString("en-US")}
               {sortTriage ? " · ranked from latest window" : ""}
+              {aiFilter ? " · within screened window" : ""}
             </span>
             <span className="flex gap-2">
               {page > 1 && (

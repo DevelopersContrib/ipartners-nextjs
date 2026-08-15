@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/auto-messages",
       "schedule": "30 14 * * *"
+    },
+    {
+      "path": "/api/cron/review-pending",
+      "schedule": "0 5 * * *"
     }
   ]
 }

@@ -7,22 +7,30 @@ import {
   CheckoutWidget,
   type CheckoutResult,
 } from "@paydirectv2/react-widgets";
+import type { SponsorScope } from "@/lib/sponsor-pricing";
+
+/** PayDirect only allows its own origin in CORS, so widget calls go through our
+ *  proxy at src/app/api/paydirect/[...path]/route.ts, which attaches the key. */
+const PAYDIRECT_PROXY_BASE = "/api/paydirect";
 
 export default function SponsorCheckoutWidget({
-  apiKey,
   amount,
   tier,
   vertical,
+  scopeType,
+  scopeValue,
   email,
   engagementId,
   returnUrl,
   cancelUrl,
   description,
 }: {
-  apiKey: string;
   amount: string;
   tier: string;
+  /** Category context — sent for both scopes so reporting stays grouped. */
   vertical: string;
+  scopeType: SponsorScope;
+  scopeValue: string;
   email: string;
   engagementId?: string | null;
   returnUrl: string;
@@ -38,6 +46,8 @@ export default function SponsorCheckoutWidget({
     product: "ipartner_sponsor",
     tier,
     vertical,
+    scope_type: scopeType,
+    scope_value: scopeValue,
     email,
   };
   if (engagementId) metadata.engagement_id = engagementId;
@@ -55,6 +65,8 @@ export default function SponsorCheckoutWidget({
             paymentMethod: payment.paymentMethod,
             tier,
             vertical,
+            scopeType,
+            scopeValue,
             email,
             engagementId: engagementId || undefined,
             status: payment.status || "created",
@@ -77,7 +89,8 @@ export default function SponsorCheckoutWidget({
 
   return (
     <PayDirectProvider
-      apiKey={apiKey}
+      apiKey=""
+      baseUrl={PAYDIRECT_PROXY_BASE}
       theme="light"
       onError={(err) => setError(err)}
     >

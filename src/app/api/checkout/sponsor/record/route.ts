@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { getCurrentPartner } from "@/lib/auth";
 import { recordPaydirectPayment } from "@/lib/paydirect";
 import { isSponsorTier } from "@/lib/admin-client";
-import { sponsorTierAmount } from "@/lib/sponsor-pricing";
+import {
+  isSponsorScope,
+  normalizeSponsorDomain,
+  sponsorTierAmount,
+} from "@/lib/sponsor-pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +35,12 @@ export async function POST(req: Request) {
   const engagementId = String(
     (body as { engagementId?: unknown }).engagementId || "",
   ).trim();
+  const scopeTypeRaw = String((body as { scopeType?: unknown }).scopeType || "")
+    .trim()
+    .toLowerCase();
+  const scopeValueRaw = String(
+    (body as { scopeValue?: unknown }).scopeValue || "",
+  ).trim();
 
   if (!paymentId) {
     return NextResponse.json({ error: "paymentId required" }, { status: 400 });
@@ -38,6 +48,13 @@ export async function POST(req: Request) {
   if (!isSponsorTier(tier)) {
     return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
   }
+
+  // Domain scope needs a valid hostname; anything else falls back to category.
+  const domainScope =
+    scopeTypeRaw === "domain" ? normalizeSponsorDomain(scopeValueRaw) : "";
+  const scopeType =
+    domainScope && isSponsorScope(scopeTypeRaw) ? "domain" : "vertical";
+  const scopeValue = scopeType === "domain" ? domainScope : vertical;
 
   const amount =
     String((body as { amount?: unknown }).amount || "").trim() ||
@@ -57,6 +74,8 @@ export async function POST(req: Request) {
       email: partner.email,
       tier,
       vertical,
+      scope_type: scopeType,
+      scope_value: scopeValue,
       product: "ipartner_sponsor",
       ...(engagementId ? { engagement_id: engagementId } : {}),
     },

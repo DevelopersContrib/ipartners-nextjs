@@ -12,7 +12,9 @@ import CampaignSends from "./CampaignSends";
 import PublishAndEnrich from "./PublishAndEnrich";
 import SponsorInvoiceButton from "./SponsorInvoiceButton";
 import AgentThread from "./AgentThread";
+import ReviewCard from "./ReviewCard";
 import { getApplicationDetail } from "@/lib/application-detail";
+import { getLatestReviews } from "@/lib/engagement-review";
 
 export const dynamic = "force-dynamic";
 
@@ -44,8 +46,16 @@ export default async function EngagementDetail({
   const e = await prisma.ippEngagement.findUnique({ where: { id: engagementId } });
   if (!e) notFound();
 
-  const [profile, siblings, traffic, member, campaignSends, application, agentMessages] =
-    await Promise.all([
+  const [
+    profile,
+    siblings,
+    traffic,
+    member,
+    campaignSends,
+    application,
+    agentMessages,
+    reviews,
+  ] = await Promise.all([
     getPartnerProfile(e.email),
     prisma.ippEngagement.findMany({
       where: { email: e.email, id: { not: engagementId } },
@@ -70,7 +80,8 @@ export default async function EngagementDetail({
       applicationJson: e.applicationJson,
     }),
     prisma.ippAgentMessage.findMany({
-      where: { engagementId },
+      // Chat only — the internal "reviewer" rows render in ReviewCard instead.
+      where: { engagementId, role: { in: ["user", "assistant"] } },
       orderBy: { id: "asc" },
       take: 40,
       select: {
@@ -80,7 +91,10 @@ export default async function EngagementDetail({
         createdAt: true,
       },
     }),
+    getLatestReviews([engagementId]),
   ]);
+
+  const review = reviews.get(String(engagementId)) ?? null;
 
   const t = e.scopeValue ? traffic[e.scopeValue.toLowerCase()] : undefined;
 
@@ -125,6 +139,8 @@ export default async function EngagementDetail({
             <RowActions id={String(e.id)} status={e.status} />
           </div>
         </header>
+
+        <ReviewCard engagementId={String(e.id)} review={review} />
 
         <PublishAndEnrich
           email={e.email}

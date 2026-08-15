@@ -3,8 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentPartner } from "@/lib/auth";
 import { isSponsorTier } from "@/lib/admin-client";
-import { sponsorTierAmount } from "@/lib/sponsor-pricing";
-import { paydirectApiKey, paydirectConfigured } from "@/lib/paydirect";
+import {
+  normalizeSponsorDomain,
+  sponsorTierAmount,
+  sponsorTierDetail,
+} from "@/lib/sponsor-pricing";
+import { paydirectConfigured } from "@/lib/paydirect";
 import { VERTICALS } from "@/lib/verticals";
 import SponsorCheckoutWidget from "@/components/paydirect/SponsorCheckoutWidget";
 
@@ -21,6 +25,8 @@ export default async function SponsorCheckoutPage({
   searchParams: Promise<{
     tier?: string;
     vertical?: string;
+    domain?: string;
+    scope?: string;
     engagement?: string;
   }>;
 }) {
@@ -35,14 +41,28 @@ export default async function SponsorCheckoutPage({
   const verticalMeta = VERTICALS.find((v) => v.slug === verticalSlug);
   const verticalLabel = verticalMeta?.name || verticalSlug;
 
+  // Domain scope only when the requested host is a valid bare hostname.
+  const domain =
+    params.scope === "vertical" ? "" : normalizeSponsorDomain(params.domain);
+  const scopeType = domain ? "domain" : "vertical";
+  const scopeValue = domain || verticalSlug;
+  const scopeLabel = domain || verticalLabel;
+
+  const detail = sponsorTierDetail(tier);
   const partner = await getCurrentPartner();
   const email = partner?.email || "";
   const base =
     process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://ipartner.com";
   const returnUrl = `${base}/checkout/sponsor/success?tier=${encodeURIComponent(tier)}`;
-  const cancelUrl = `${base}/checkout/sponsor?tier=${encodeURIComponent(tier)}&vertical=${encodeURIComponent(verticalSlug)}`;
+  const cancelParams = new URLSearchParams({ tier, vertical: verticalSlug });
+  if (domain) {
+    cancelParams.set("scope", "domain");
+    cancelParams.set("domain", domain);
+  }
+  const cancelUrl = `${base}/checkout/sponsor?${cancelParams.toString()}`;
+  const signInNext = `/checkout/sponsor?${cancelParams.toString()}`;
+  const applyHref = `/apply?mode=sponsor&tier=${tier}&vertical=${encodeURIComponent(verticalSlug)}`;
 
-  const apiKey = paydirectApiKey();
   const configured = paydirectConfigured();
 
   return (
@@ -56,14 +76,43 @@ export default async function SponsorCheckoutPage({
             {tier} sponsorship
           </h1>
           <p className="text-sm text-[var(--ipp-secondary)] leading-relaxed">
-            Annual placement for <strong className="text-[var(--ipp-text)]">{verticalLabel}</strong>{" "}
+            Annual placement on{" "}
+            <strong className="text-[var(--ipp-text)]">{scopeLabel}</strong>
+            {domain ? (
+              <>
+                {" "}
+                (single domain in {verticalLabel})
+              </>
+            ) : (
+              <> (whole category)</>
+            )}{" "}
             — ${amount} USD/year. Pay with card or crypto (USDC) via PayDirect.
           </p>
         </header>
 
+        {detail && (
+          <ul className="space-y-2 rounded-2xl border border-[var(--border)] bg-white p-4">
+            {detail.features[scopeType].map((f) => (
+              <li
+                key={f}
+                className="flex gap-2 text-xs leading-relaxed text-[var(--ipp-secondary)]"
+              >
+                <span
+                  className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--ipp-accent)]"
+                  aria-hidden
+                />
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
         {!partner && (
           <p className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-xs text-amber-900">
-            <Link href={`/login?next=${encodeURIComponent(`/checkout/sponsor?tier=${tier}&vertical=${verticalSlug}`)}`} className="font-semibold underline underline-offset-2">
+            <Link
+              href={`/login?next=${encodeURIComponent(signInNext)}`}
+              className="font-semibold underline underline-offset-2"
+            >
               Sign in
             </Link>{" "}
             so we can attach this payment to your partner account. You can still check out;
@@ -85,7 +134,7 @@ export default async function SponsorCheckoutPage({
             configure a workspace settlement address in the PayDirect dashboard.
             Until then,{" "}
             <Link
-              href={`/apply?mode=sponsor&tier=${tier}&vertical=${encodeURIComponent(verticalSlug)}`}
+              href={applyHref}
               className="font-semibold text-[var(--ipp-text)] underline underline-offset-2"
             >
               register interest
@@ -99,7 +148,7 @@ export default async function SponsorCheckoutPage({
               fulfillment).
             </p>
             <Link
-              href={`/login?next=${encodeURIComponent(`/checkout/sponsor?tier=${tier}&vertical=${verticalSlug}`)}`}
+              href={`/login?next=${encodeURIComponent(signInNext)}`}
               className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--ipp-primary)] px-5 text-sm font-semibold text-white"
             >
               Sign in to pay
@@ -107,24 +156,22 @@ export default async function SponsorCheckoutPage({
           </div>
         ) : (
           <SponsorCheckoutWidget
-            apiKey={apiKey}
             amount={amount}
             tier={tier}
             vertical={verticalSlug}
+            scopeType={scopeType}
+            scopeValue={scopeValue}
             email={email}
             engagementId={params.engagement || null}
             returnUrl={returnUrl}
             cancelUrl={cancelUrl}
-            description={`iPartner ${tier} sponsorship — ${verticalLabel} (annual)`}
+            description={`iPartner ${tier} sponsorship — ${scopeLabel} (annual)`}
           />
         )}
 
         <p className="text-xs text-[var(--ipp-secondary)] leading-relaxed">
           Prefer to talk first?{" "}
-          <Link
-            href={`/apply?mode=sponsor&tier=${tier}&vertical=${encodeURIComponent(verticalSlug)}`}
-            className="underline underline-offset-2"
-          >
+          <Link href={applyHref} className="underline underline-offset-2">
             Apply without paying
           </Link>{" "}
           and we&apos;ll follow up. Settlement is confirmed via PayDirect webhook after

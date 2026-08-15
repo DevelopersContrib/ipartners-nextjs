@@ -389,6 +389,62 @@ export async function deleteEngagementAdmin(id: string): Promise<ActionResult> {
   redirect("/admin");
 }
 
+export type ReviewSweepActionResult = {
+  ok: boolean;
+  scanned?: number;
+  reviewed?: number;
+  failed?: number;
+  byVerdict?: Record<string, number>;
+  error?: string;
+};
+
+/**
+ * AI pre-screen of the pending queue. Writes a verdict + summary per row and
+ * never changes status — the admin still confirms every decision.
+ */
+export async function runReviewSweep(opts?: {
+  limit?: number;
+  force?: boolean;
+}): Promise<ReviewSweepActionResult> {
+  const admin = await requireAdmin();
+  const { reviewPendingEngagements } = await import("./engagement-review");
+
+  try {
+    const res = await reviewPendingEngagements({
+      limit: opts?.limit ?? 25,
+      force: opts?.force,
+    });
+    console.log(
+      `[admin] ${admin.email} ran AI pre-screen: reviewed ${res.reviewed}/${res.scanned}`,
+    );
+    revalidatePath("/admin");
+    return { ok: true, ...res };
+  } catch (err) {
+    console.error("[admin] review sweep failed:", err);
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Review sweep failed",
+    };
+  }
+}
+
+/** Re-run the AI review for one engagement (detail page). */
+export async function rereviewEngagement(id: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const engagementId = parseId(id);
+  if (!engagementId) return { ok: false, error: "Invalid id" };
+
+  const { reviewOneEngagement } = await import("./engagement-review");
+  const review = await reviewOneEngagement(engagementId);
+  if (!review) return { ok: false, error: "Engagement not found" };
+
+  console.log(
+    `[admin] ${admin.email} re-reviewed #${engagementId}: ${review.verdict}`,
+  );
+  revalidateEngagement(engagementId);
+  return { ok: true, id: String(engagementId) };
+}
+
 export type FraudSweepHit = {
   id: string;
   email: string;

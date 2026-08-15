@@ -5,6 +5,15 @@ import Link from "next/link";
 import { setEngagementStatus } from "@/lib/admin-actions";
 import { ENGAGEMENT_STATUSES } from "@/lib/admin-client";
 
+export type QueueReview = {
+  verdict: string;
+  confidence: number;
+  reason: string;
+  summary: string[];
+  flags: string[];
+  layer: string;
+};
+
 export type QueueRow = {
   id: string;
   email: string;
@@ -17,6 +26,7 @@ export type QueueRow = {
   triageScore?: number;
   ageDays?: number;
   visitors30d?: number;
+  review?: QueueReview | null;
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -25,6 +35,20 @@ const STATUS_STYLES: Record<string, string> = {
   active: "bg-green-50 text-green-800 border-green-200",
   declined: "bg-red-50 text-red-700 border-red-200",
   lapsed: "bg-gray-100 text-gray-600 border-gray-200",
+};
+
+const VERDICT_STYLES: Record<string, string> = {
+  approve: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  decline: "bg-red-50 text-red-700 border-red-200",
+  needs_info: "bg-amber-50 text-amber-900 border-amber-200",
+  review: "bg-blue-50 text-blue-800 border-blue-200",
+};
+
+const VERDICT_LABELS: Record<string, string> = {
+  approve: "AI: approve",
+  decline: "AI: decline",
+  needs_info: "AI: needs info",
+  review: "AI: read it",
 };
 
 const BULK = ["approved", "active", "declined", "pending", "lapsed"] as const;
@@ -55,6 +79,27 @@ export default function AdminQueue({
   const toggleAll = () =>
     setSelected(allVisible ? new Set() : new Set(rows.map((r) => r.id)));
 
+  const recommended = (verdict: string) =>
+    rows.filter((r) => r.review?.verdict === verdict);
+
+  /** Pre-select the AI's picks and prefill the reason — admin still confirms. */
+  const selectRecommended = (verdict: string) => {
+    const ids = recommended(verdict).map((r) => r.id);
+    setSelected(new Set(ids));
+    setConfirming(null);
+    setConfirmPhrase("");
+    setReason(
+      verdict === "approve"
+        ? "AI pre-screen recommended approve — reviewed in queue"
+        : "AI pre-screen recommended decline — reviewed in queue",
+    );
+    setMessage(
+      ids.length
+        ? `${ids.length} AI-${verdict} row${ids.length === 1 ? "" : "s"} selected — press ${verdict === "approve" ? "approved" : "declined"} to confirm`
+        : `No rows on this page are AI-${verdict}`,
+    );
+  };
+
   const needsReason =
     confirming === "declined" ||
     (confirming === "approved" && selected.size > 1);
@@ -69,7 +114,6 @@ export default function AdminQueue({
     if (confirming !== status) {
       setConfirming(status);
       setMessage(null);
-      setReason("");
       setConfirmPhrase("");
       return;
     }
@@ -89,6 +133,9 @@ export default function AdminQueue({
       }
     });
   };
+
+  const approveCount = recommended("approve").length;
+  const declineCount = recommended("decline").length;
 
   return (
     <div>
@@ -130,6 +177,34 @@ export default function AdminQueue({
           </div>
         </div>
 
+        {(approveCount > 0 || declineCount > 0) && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-3">
+            <span className="text-xs text-[var(--ipp-secondary)]">
+              Confirm the AI&rsquo;s picks on this page:
+            </span>
+            {approveCount > 0 && (
+              <button
+                type="button"
+                onClick={() => selectRecommended("approve")}
+                disabled={pending}
+                className="min-h-9 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 disabled:opacity-40"
+              >
+                Select {approveCount} AI-approve
+              </button>
+            )}
+            {declineCount > 0 && (
+              <button
+                type="button"
+                onClick={() => selectRecommended("decline")}
+                disabled={pending}
+                className="min-h-9 rounded-lg border border-red-300 bg-red-50 px-3 text-xs font-semibold text-red-700 disabled:opacity-40"
+              >
+                Select {declineCount} AI-decline
+              </button>
+            )}
+          </div>
+        )}
+
         {confirming && (needsReason || needsConfirmPhrase) && (
           <div className="grid gap-2 border-t border-[var(--border)] pt-3 sm:grid-cols-2">
             {needsReason && (
@@ -168,22 +243,37 @@ export default function AdminQueue({
         {rows.map((r) => (
           <li
             key={r.id}
-            className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[var(--border)] bg-white px-4 py-3"
+            className="flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-[var(--border)] bg-white px-4 py-3"
           >
             <input
               type="checkbox"
               checked={selected.has(r.id)}
               onChange={() => toggle(r.id)}
-              className="h-4 w-4"
+              className="mt-1 h-4 w-4"
               aria-label={`Select ${r.email}`}
             />
-            <div className="min-w-0">
-              <Link
-                href={`/admin/engagement/${r.id}`}
-                className="break-all text-sm font-semibold text-[var(--ipp-text)] underline-offset-2 hover:underline"
-              >
-                {r.email}
-              </Link>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/admin/engagement/${r.id}`}
+                  className="break-all text-sm font-semibold text-[var(--ipp-text)] underline-offset-2 hover:underline"
+                >
+                  {r.email}
+                </Link>
+                {r.review && (
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                      VERDICT_STYLES[r.review.verdict] || VERDICT_STYLES.review
+                    }`}
+                  >
+                    {VERDICT_LABELS[r.review.verdict] || r.review.verdict}
+                    {r.review.confidence > 0
+                      ? ` ${Math.round(r.review.confidence * 100)}%`
+                      : ""}
+                  </span>
+                )}
+              </div>
+
               <p className="text-xs text-[var(--ipp-secondary)]">
                 <span className="capitalize">{r.mode.replace("_", " ")}</span>
                 {r.scopeValue && (
@@ -201,9 +291,34 @@ export default function AdminQueue({
                   </span>
                 )}
               </p>
+
+              {r.review && (
+                <div className="mt-1.5 space-y-1">
+                  {r.review.summary[0] && (
+                    <p className="text-xs text-[var(--ipp-text)]">
+                      {r.review.summary[0]}
+                    </p>
+                  )}
+                  {r.review.reason && (
+                    <p className="text-xs italic text-[var(--ipp-secondary)]">
+                      {r.review.reason}
+                    </p>
+                  )}
+                  {r.review.flags.length > 0 && (
+                    <p className="text-[11px] text-amber-800">
+                      {r.review.flags.join(" · ")}
+                    </p>
+                  )}
+                </div>
+              )}
+              {!r.review && r.status === "pending" && (
+                <p className="mt-1.5 text-[11px] text-[var(--ipp-secondary)]">
+                  Not screened yet — run the AI pre-screen above.
+                </p>
+              )}
             </div>
             <span
-              className={`ml-auto rounded-full border px-2 py-0.5 text-xs capitalize ${
+              className={`rounded-full border px-2 py-0.5 text-xs capitalize ${
                 STATUS_STYLES[r.status] || STATUS_STYLES.lapsed
               }`}
             >

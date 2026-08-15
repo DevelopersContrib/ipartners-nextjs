@@ -272,7 +272,9 @@ export async function listAgentMessages(engagementId: bigint, email: string) {
   });
   if (!e) return [];
   return prisma.ippAgentMessage.findMany({
-    where: { engagementId },
+    // Partner-facing: only the two chat roles. ipp_agent_message also holds
+    // internal ops reviews (role "reviewer") that must never reach the partner.
+    where: { engagementId, role: { in: ["user", "assistant"] } },
     orderBy: { id: "asc" },
     take: 50,
     select: {

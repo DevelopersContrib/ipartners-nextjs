@@ -4,10 +4,29 @@ import { prisma } from "./db";
 import { createEngagement } from "./engagements";
 import { pushEngagementToGrowagent } from "./growagent";
 import { notifyStatusChange } from "./campaigns";
-import { sponsorTierAmount } from "./sponsor-pricing";
+import { normalizeSponsorDomain, sponsorTierAmount } from "./sponsor-pricing";
 import { isSponsorTier } from "./admin-client";
 
-/** Publishable PayDirect key — prefer NEXT_PUBLIC_ for client; server may use PAYDIRECT_API_KEY. */
+/** Stored checkout metadata, used to recover scope on later webhook deliveries. */
+function parseStoredMetadata(raw: string | null): Record<string, string> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") return {};
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof v === "string") out[k] = v;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export const PAYDIRECT_API_ORIGIN = "https://www.paydirect.com";
+
+/** Secret PayDirect key. Server-side only — the browser reaches PayDirect through
+ *  /api/paydirect, so this value must never be handed to a client component. */
 export function paydirectApiKey(): string {
   return (
     process.env.NEXT_PUBLIC_PAYDIRECT_API_KEY?.trim() ||
@@ -99,7 +118,6 @@ export async function fulfillSponsorPayment(opts: {
   paymentMethod?: string | null;
   metadata?: Record<string, string>;
 }) {
-  const meta = opts.metadata || {};
   const existing = await prisma.ippPayment.findUnique({
     where: {
       provider_providerPaymentId: {
@@ -108,6 +126,12 @@ export async function fulfillSponsorPayment(opts: {
       },
     },
   });
+
+  // Webhook metadata wins; fall back to what checkout stored on the payment row.
+  const meta: Record<string, string> = {
+    ...parseStoredMetadata(existing?.metadataJson ?? null),
+    ...(opts.metadata || {}),
+  };
 
   const email = (meta.email || existing?.email || "").trim().toLowerCase();
   if (!email.includes("@")) {
@@ -118,6 +142,13 @@ export async function fulfillSponsorPayment(opts: {
   const tierRaw = (meta.tier || existing?.tier || "").toLowerCase();
   const tier = isSponsorTier(tierRaw) ? tierRaw : null;
   const vertical = meta.vertical || existing?.vertical || null;
+
+  // Placement scope: one domain, or the whole category (default).
+  const scopedDomain =
+    meta.scope_type === "domain" ? normalizeSponsorDomain(meta.scope_value) : "";
+  const scopeType = scopedDomain ? "domain" : "vertical";
+  const scopeValue = scopedDomain || vertical;
+
   const amount =
     opts.amount ||
     existing?.amount ||
@@ -156,7 +187,7 @@ export async function fulfillSponsorPayment(opts: {
             email,
             mode: "sponsor",
             status: { in: ["pending", "approved"] },
-            ...(vertical ? { scopeValue: vertical } : {}),
+            ...(scopeValue ? { scopeValue } : {}),
           },
           orderBy: { id: "desc" },
         });
@@ -165,14 +196,16 @@ export async function fulfillSponsorPayment(opts: {
     engagement = await createEngagement({
       email,
       mode: "sponsor",
-      scopeType: "vertical",
-      scopeValue: vertical,
+      scopeType,
+      scopeValue,
       status: "pending",
       tier,
       applicationJson: {
         mode: "sponsor",
         tier,
         vertical,
+        scope_type: scopeType,
+        scope_value: scopeValue,
         paydirect_payment_id: opts.providerPaymentId,
         source: "paydirect_checkout",
       },
@@ -186,8 +219,8 @@ export async function fulfillSponsorPayment(opts: {
       data: {
         status: "approved",
         tier,
-        scopeType: "vertical",
-        scopeValue: vertical || engagement.scopeValue,
+        scopeType,
+        scopeValue: scopeValue || engagement.scopeValue,
       },
     });
     void notifyStatusChange(
@@ -200,7 +233,7 @@ export async function fulfillSponsorPayment(opts: {
       email,
       engagementId: engagement.id,
       mode: "sponsor",
-      scopeValue: vertical || engagement.scopeValue,
+      scopeValue: scopeValue || engagement.scopeValue,
       status: "approved",
       tier,
     }).catch((err) => console.error("[paydirect] growagent failed:", err));
