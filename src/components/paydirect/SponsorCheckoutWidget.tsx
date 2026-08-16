@@ -61,15 +61,12 @@ export default function SponsorCheckoutWidget({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             paymentId: payment.id,
-            amount: payment.amount || amount,
             paymentMethod: payment.paymentMethod,
             tier,
             vertical,
             scopeType,
             scopeValue,
-            email,
             engagementId: engagementId || undefined,
-            status: payment.status || "created",
           }),
         });
         if (!res.ok) {

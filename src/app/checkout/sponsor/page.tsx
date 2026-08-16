@@ -115,8 +115,7 @@ export default async function SponsorCheckoutPage({
             >
               Sign in
             </Link>{" "}
-            so we can attach this payment to your partner account. You can still check out;
-            use the email you want associated with the sponsorship.
+            so we can attach this payment to your partner account.
           </p>
         )}
 
@@ -129,8 +128,7 @@ export default async function SponsorCheckoutPage({
         {!configured ? (
           <div className="rounded-2xl border border-[var(--border)] bg-white p-5 text-sm text-[var(--ipp-secondary)]">
             PayDirect is not configured yet. Set{" "}
-            <code className="font-mono text-xs">NEXT_PUBLIC_PAYDIRECT_API_KEY</code>{" "}
-            (or <code className="font-mono text-xs">PAYDIRECT_API_KEY</code>) in env, and
+            <code className="font-mono text-xs">PAYDIRECT_API_KEY</code> in env, and
             configure a workspace settlement address in the PayDirect dashboard.
             Until then,{" "}
             <Link

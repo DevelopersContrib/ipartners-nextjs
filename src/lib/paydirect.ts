@@ -1,11 +1,11 @@
 import "server-only";
-import { createHmac, timingSafeEqual } from "crypto";
 import { prisma } from "./db";
 import { createEngagement } from "./engagements";
 import { pushEngagementToGrowagent } from "./growagent";
 import { notifyStatusChange } from "./campaigns";
 import { normalizeSponsorDomain, sponsorTierAmount } from "./sponsor-pricing";
 import { isSponsorTier } from "./admin-client";
+export { verifyPaydirectSignature } from "./paydirect-webhook";
 
 /** Stored checkout metadata, used to recover scope on later webhook deliveries. */
 function parseStoredMetadata(raw: string | null): Record<string, string> {
@@ -28,32 +28,44 @@ export const PAYDIRECT_API_ORIGIN = "https://www.paydirect.com";
 /** Secret PayDirect key. Server-side only — the browser reaches PayDirect through
  *  /api/paydirect, so this value must never be handed to a client component. */
 export function paydirectApiKey(): string {
-  return (
-    process.env.NEXT_PUBLIC_PAYDIRECT_API_KEY?.trim() ||
-    process.env.PAYDIRECT_API_KEY?.trim() ||
-    ""
-  );
+  return process.env.PAYDIRECT_API_KEY?.trim() || "";
 }
 
 export function paydirectConfigured(): boolean {
   return Boolean(paydirectApiKey());
 }
 
-export function verifyPaydirectSignature(
-  secret: string,
-  rawBody: string,
-  signature: string | null,
-): boolean {
-  if (!secret || !signature) return false;
-  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
-  try {
-    const a = Buffer.from(expected, "hex");
-    const b = Buffer.from(signature.trim(), "hex");
-    if (a.length !== b.length) return false;
-    return timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
+const PAYDIRECT_STATUS_RANK: Record<string, number> = {
+  created: 0,
+  failed: 1,
+  expired: 1,
+  confirmed: 2,
+  forwarded: 3,
+};
+
+export function resolvePaydirectStatus(
+  current: string | null | undefined,
+  incoming: string | null | undefined,
+): string {
+  const currentStatus = (current || "created").trim().toLowerCase();
+  const incomingStatus = (incoming || "created").trim().toLowerCase();
+  const safeIncoming =
+    incomingStatus in PAYDIRECT_STATUS_RANK ? incomingStatus : "created";
+  const safeCurrent =
+    currentStatus in PAYDIRECT_STATUS_RANK ? currentStatus : "created";
+  return PAYDIRECT_STATUS_RANK[safeIncoming] > PAYDIRECT_STATUS_RANK[safeCurrent]
+    ? safeIncoming
+    : safeCurrent;
+}
+
+function amountsMatch(expected: string, actual: string): boolean {
+  const expectedCents = Math.round(Number(expected) * 100);
+  const actualCents = Math.round(Number(actual) * 100);
+  return (
+    Number.isSafeInteger(expectedCents) &&
+    Number.isSafeInteger(actualCents) &&
+    expectedCents === actualCents
+  );
 }
 
 export async function recordPaydirectPayment(input: {
@@ -68,7 +80,6 @@ export async function recordPaydirectPayment(input: {
   metadata?: Record<string, string>;
 }) {
   const email = input.email.trim().toLowerCase();
-  const status = input.status || "created";
   const metadataJson = input.metadata
     ? JSON.stringify(input.metadata).slice(0, 60_000)
     : null;
@@ -77,6 +88,16 @@ export async function recordPaydirectPayment(input: {
     input.engagementId && /^\d+$/.test(input.engagementId)
       ? BigInt(input.engagementId)
       : null;
+  const existing = await prisma.ippPayment.findUnique({
+    where: {
+      provider_providerPaymentId: {
+        provider: "paydirect",
+        providerPaymentId: input.providerPaymentId,
+      },
+    },
+    select: { status: true },
+  });
+  const status = resolvePaydirectStatus(existing?.status, input.status);
 
   return prisma.ippPayment.upsert({
     where: {
@@ -154,6 +175,7 @@ export async function fulfillSponsorPayment(opts: {
     existing?.amount ||
     (tier ? sponsorTierAmount(tier) : null) ||
     "0";
+  const canonicalAmount = tier ? sponsorTierAmount(tier) : null;
 
   const payment = await recordPaydirectPayment({
     providerPaymentId: opts.providerPaymentId,
@@ -175,54 +197,109 @@ export async function fulfillSponsorPayment(opts: {
   if (!shouldApprove || !tier) {
     return { ok: true as const, payment, engagementId: null, approved: false };
   }
+  if (!scopeValue) {
+    return {
+      ok: false as const,
+      reason: "missing sponsor scope",
+      payment,
+      engagementId: null,
+      approved: false,
+    };
+  }
+  if (!canonicalAmount || !amountsMatch(canonicalAmount, amount)) {
+    console.error(
+      `[paydirect] amount mismatch for ${opts.providerPaymentId}: expected ${canonicalAmount || "unknown"}, got ${amount}`,
+    );
+    return {
+      ok: false as const,
+      reason: "payment amount does not match tier",
+      payment,
+      engagementId: null,
+      approved: false,
+    };
+  }
 
   // Find open sponsor engagement or create one.
   let engagement =
     payment.engagementId != null
-      ? await prisma.ippEngagement.findUnique({
-          where: { id: payment.engagementId },
+      ? await prisma.ippEngagement.findFirst({
+          where: {
+            id: payment.engagementId,
+            email,
+            mode: "sponsor",
+            status: { in: ["pending", "approved", "active"] },
+            scopeValue,
+          },
         })
       : await prisma.ippEngagement.findFirst({
           where: {
             email,
             mode: "sponsor",
-            status: { in: ["pending", "approved"] },
-            ...(scopeValue ? { scopeValue } : {}),
+            status: { in: ["pending", "approved", "active"] },
+            scopeValue,
           },
           orderBy: { id: "desc" },
         });
 
   if (!engagement) {
-    engagement = await createEngagement({
-      email,
-      mode: "sponsor",
-      scopeType,
-      scopeValue,
-      status: "pending",
-      tier,
-      applicationJson: {
+    try {
+      engagement = await createEngagement({
+        email,
         mode: "sponsor",
+        scopeType,
+        scopeValue,
+        status: "pending",
         tier,
-        vertical,
-        scope_type: scopeType,
-        scope_value: scopeValue,
-        paydirect_payment_id: opts.providerPaymentId,
-        source: "paydirect_checkout",
-      },
-    });
+        sourceTable: "ipp_payment",
+        sourceId: Number(payment.id),
+        applicationJson: {
+          mode: "sponsor",
+          tier,
+          vertical,
+          scope_type: scopeType,
+          scope_value: scopeValue,
+          paydirect_payment_id: opts.providerPaymentId,
+          source: "paydirect_checkout",
+        },
+      });
+    } catch (err) {
+      // Concurrent duplicate webhook: uq_source lets only one create win.
+      if (
+        !err ||
+        typeof err !== "object" ||
+        !("code" in err) ||
+        err.code !== "P2002"
+      ) {
+        throw err;
+      }
+      engagement = await prisma.ippEngagement.findUnique({
+        where: {
+          sourceTable_sourceId: {
+            sourceTable: "ipp_payment",
+            sourceId: payment.id,
+          },
+        },
+      });
+      if (!engagement) throw err;
+    }
   }
 
   const previous = engagement.status;
-  if (previous !== "approved" && previous !== "active") {
-    await prisma.ippEngagement.update({
-      where: { id: engagement.id },
-      data: {
-        status: "approved",
-        tier,
-        scopeType,
-        scopeValue: scopeValue || engagement.scopeValue,
-      },
-    });
+  const approval = await prisma.ippEngagement.updateMany({
+    where: {
+      id: engagement.id,
+      status: { notIn: ["approved", "active"] },
+    },
+    data: {
+      status: "approved",
+      tier,
+      scopeType,
+      scopeValue,
+    },
+  });
+  if (approval.count === 1) {
+    // updateMany is the side-effect claim: concurrent duplicate deliveries can
+    // both reach here, but only the pending -> approved winner sends/pushes.
     void notifyStatusChange(
       [engagement.id],
       "approved",
@@ -233,7 +310,7 @@ export async function fulfillSponsorPayment(opts: {
       email,
       engagementId: engagement.id,
       mode: "sponsor",
-      scopeValue: scopeValue || engagement.scopeValue,
+      scopeValue,
       status: "approved",
       tier,
     }).catch((err) => console.error("[paydirect] growagent failed:", err));
@@ -241,13 +318,19 @@ export async function fulfillSponsorPayment(opts: {
 
   await prisma.ippPayment.update({
     where: { id: payment.id },
-    data: { engagementId: engagement.id, status: opts.status },
+    data: {
+      engagementId: engagement.id,
+      status: payment.status,
+    },
   });
 
   return {
     ok: true as const,
     payment,
     engagementId: String(engagement.id),
-    approved: true,
+    approved:
+      approval.count === 1 ||
+      previous === "approved" ||
+      previous === "active",
   };
 }

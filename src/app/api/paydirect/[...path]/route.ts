@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentPartner } from "@/lib/auth";
 import { paydirectApiKey, PAYDIRECT_API_ORIGIN } from "@/lib/paydirect";
 import { isSponsorTier } from "@/lib/admin-client";
-import { sponsorTierAmount } from "@/lib/sponsor-pricing";
+import {
+  isSponsorScope,
+  normalizeSponsorDomain,
+  sponsorTierAmount,
+} from "@/lib/sponsor-pricing";
+import { VERTICALS } from "@/lib/verticals";
 
 export const dynamic = "force-dynamic";
 
@@ -43,23 +48,57 @@ function resolveUpstreamPath(
 function sanitizeSponsorBody(
   body: Record<string, unknown>,
   sessionEmail: string,
-): Record<string, unknown> {
+):
+  | { ok: true; body: Record<string, unknown> }
+  | { ok: false; error: string } {
   const rawMeta = body.metadata;
   const meta: Record<string, unknown> =
     rawMeta && typeof rawMeta === "object" && !Array.isArray(rawMeta)
       ? { ...(rawMeta as Record<string, unknown>) }
       : {};
 
-  if (meta.product !== "ipartner_sponsor") return body;
+  if (meta.product !== "ipartner_sponsor") {
+    return { ok: false, error: "Unsupported checkout product" };
+  }
 
   const tier = String(meta.tier || "").trim().toLowerCase();
   const amount = isSponsorTier(tier) ? sponsorTierAmount(tier) : null;
-  if (!amount) return { ...body, metadata: { ...meta, email: sessionEmail } };
+  if (!amount) return { ok: false, error: "Invalid sponsor tier" };
+
+  const vertical = String(meta.vertical || "").trim();
+  if (!VERTICALS.some((item) => item.slug === vertical)) {
+    return { ok: false, error: "Invalid sponsor vertical" };
+  }
+
+  const scopeType = String(meta.scope_type || "").trim().toLowerCase();
+  if (!isSponsorScope(scopeType)) {
+    return { ok: false, error: "Invalid sponsorship scope" };
+  }
+  const domain =
+    scopeType === "domain"
+      ? normalizeSponsorDomain(String(meta.scope_value || ""))
+      : "";
+  if (scopeType === "domain" && !domain) {
+    return { ok: false, error: "Invalid sponsor domain" };
+  }
 
   return {
-    ...body,
-    amount,
-    metadata: { ...meta, tier, email: sessionEmail },
+    ok: true,
+    body: {
+      ...body,
+      amount,
+      metadata: {
+        ...meta,
+        tier,
+        vertical,
+        scope_type: scopeType,
+        scope_value: domain || vertical,
+        email: sessionEmail,
+        // A URL-provided engagement id is browser input. The record endpoint
+        // validates and stores any trusted link after PayDirect responds.
+        engagement_id: undefined,
+      },
+    },
   };
 }
 
@@ -105,9 +144,14 @@ async function forward(req: NextRequest, ctx: Ctx, method: "GET" | "POST") {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
     }
-    upstreamBody = JSON.stringify(
-      sanitizeSponsorBody(parsed as Record<string, unknown>, partner.email),
+    const sanitized = sanitizeSponsorBody(
+      parsed as Record<string, unknown>,
+      partner.email,
     );
+    if (!sanitized.ok) {
+      return NextResponse.json({ error: sanitized.error }, { status: 400 });
+    }
+    upstreamBody = JSON.stringify(sanitized.body);
   }
 
   try {

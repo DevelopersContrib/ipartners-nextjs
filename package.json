@@ -16,6 +16,7 @@
     "prisma:migrate": "npm run db:forbidden",
     "prisma:studio": "prisma studio",
     "test:handoff": "tsx --conditions=react-server --env-file=.env scripts/test-handoff.ts",
+    "test:paydirect": "tsx --conditions=react-server scripts/test-paydirect-webhook.ts",
     "test-db": "tsx scripts/test-db.ts",
     "backfill:engagements": "tsx --env-file=.env scripts/backfill-engagements.ts",
     "reconcile:active": "tsx --conditions=react-server --env-file=.env scripts/reconcile-active.ts",
