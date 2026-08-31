@@ -1,6 +1,9 @@
 import "server-only";
 import {
   getVerticalBrandsByValue,
+  getBrandByDomain,
+  inferVerticalForBrand,
+  searchBrandsByQuery,
   formatDomainDisplay,
   formatBrandValue,
   formatBrandStat,
@@ -20,9 +23,26 @@ export async function getDiscoverOpportunities(opts?: {
   q?: string;
 }): Promise<OpportunityCard[]> {
   const limit = opts?.limit ?? 24;
-  const q = (opts?.q || "").trim().toLowerCase();
-  const verticals = opts?.verticalSlug
-    ? VERTICALS.filter((v) => v.slug === opts.verticalSlug)
+  const q = (opts?.q || "").trim();
+  const verticalSlug = opts?.verticalSlug;
+
+  if (q) {
+    const brands = await searchBrandsByQuery(q, Math.max(limit, 36));
+    const merged: OpportunityCard[] = [];
+    for (const b of brands) {
+      const vertical = inferVerticalForBrand(b.categoryId, b.domainName);
+      if (verticalSlug && vertical.slug !== verticalSlug) continue;
+      merged.push({
+        ...b,
+        verticalSlug: vertical.slug,
+        verticalName: vertical.name,
+      });
+    }
+    return merged.slice(0, limit);
+  }
+
+  const verticals = verticalSlug
+    ? VERTICALS.filter((v) => v.slug === verticalSlug)
     : VERTICALS;
 
   const perVertical = Math.max(4, Math.ceil(limit / Math.max(verticals.length, 1)));
@@ -43,9 +63,6 @@ export async function getDiscoverOpportunities(opts?: {
     for (const b of batch) {
       const key = b.domainName.toLowerCase();
       if (seen.has(key)) continue;
-      if (q && !key.includes(q) && !(b.categoryName || "").toLowerCase().includes(q)) {
-        continue;
-      }
       seen.add(key);
       merged.push(b);
     }
@@ -67,41 +84,14 @@ export async function getOpportunityByDomain(
   const host = domain.trim().toLowerCase().replace(/^www\./, "");
   if (!host) return null;
 
-  // Search a few verticals until we find the domain (or fall back to first hit list).
-  for (const v of VERTICALS) {
-    const { brands } = await getVerticalBrandsByValue(v.slug, 40);
-    const hit = brands.find((b) => b.domainName.toLowerCase() === host);
-    if (hit) {
-      return { ...hit, verticalSlug: v.slug, verticalName: v.name };
-    }
-  }
+  const brand = await getBrandByDomain(host);
+  if (!brand) return null;
 
-  // Lightweight stub when not in top lists — still apply-able.
+  const vertical = inferVerticalForBrand(brand.categoryId, brand.domainName);
   return {
-    domainName: host,
-    value: 0,
-    askingPrice: null,
-    theoreticalTotal: null,
-    categoryName: null,
-    leads: 0,
-    offers: 0,
-    partners: 0,
-    visits: 0,
-    uniqueVisitors7d: 0,
-    uniqueVisitors30d: 0,
-    pageviews7d: 0,
-    pageviews30d: 0,
-    partnerScore: 0,
-    partnerBand: "emerging",
-    partnerLabel: "Emerging",
-    partnerBreakdown: {
-      traffic: 0,
-      network: 0,
-      demand: 0,
-      asset: 0,
-    },
-    verticalSlug: "domains",
-    verticalName: "Domains & Brands",
+    ...brand,
+    verticalSlug: vertical.slug,
+    verticalName: vertical.name,
   };
 }
 

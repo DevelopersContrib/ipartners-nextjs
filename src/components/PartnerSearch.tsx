@@ -1,9 +1,19 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import DomainReferralLink from "@/components/DomainReferralLink";
+import { formatBrandValue, formatDomainDisplay } from "@/lib/vertical-brands";
 import { searchVerticals } from "@/lib/verticals";
+
+type DomainHit = {
+  domainName: string;
+  displayName: string;
+  partnerScore: number;
+  value: number;
+  categoryName: string | null;
+  verticalName: string;
+  href: string;
+};
 
 export default function PartnerSearch({
   placeholder = "Search AI, payments, handyman, referrals…",
@@ -14,8 +24,42 @@ export default function PartnerSearch({
 }) {
   const [query, setQuery] = useState("");
   const deferred = useDeferredValue(query);
-  const results = useMemo(() => searchVerticals(deferred, 8), [deferred]);
+  const verticalResults = useMemo(() => searchVerticals(deferred, 6), [deferred]);
+  const [domainResults, setDomainResults] = useState<DomainHit[]>([]);
+  const [domainLoading, setDomainLoading] = useState(false);
   const showResults = deferred.trim().length > 0;
+
+  useEffect(() => {
+    const q = deferred.trim();
+    if (q.length < 2) {
+      setDomainResults([]);
+      setDomainLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setDomainLoading(true);
+    const timer = window.setTimeout(() => {
+      fetch(`/api/domains/search?q=${encodeURIComponent(q)}`)
+        .then((res) => (res.ok ? res.json() : { domains: [] }))
+        .then((data: { domains?: DomainHit[] }) => {
+          if (!cancelled) setDomainResults(data.domains ?? []);
+        })
+        .catch(() => {
+          if (!cancelled) setDomainResults([]);
+        })
+        .finally(() => {
+          if (!cancelled) setDomainLoading(false);
+        });
+    }, 200);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [deferred]);
+
+  const hasResults = verticalResults.length > 0 || domainResults.length > 0;
 
   return (
     <div className="w-full max-w-xl">
@@ -40,47 +84,84 @@ export default function PartnerSearch({
       </div>
 
       {showResults && (
-        <ul className="mt-3 rounded-xl border border-[var(--border)] bg-white shadow-sm overflow-hidden divide-y divide-[var(--border)] animate-fade-in-up">
-          {results.length === 0 ? (
-            <li className="px-4 py-4 text-sm text-[var(--ipp-secondary)]">
+        <div className="mt-3 rounded-xl border border-[var(--border)] bg-white shadow-sm overflow-hidden animate-fade-in-up">
+          {!hasResults && !domainLoading ? (
+            <p className="px-4 py-4 text-sm text-[var(--ipp-secondary)]">
               No matches. Try another keyword or{" "}
               <Link href="/match" className="text-[var(--ipp-accent)] font-medium hover:underline">
                 take the free match
               </Link>
               .
-            </li>
+            </p>
           ) : (
-            results.map((v) => (
-              <li key={v.slug} className="hover:bg-[var(--ipp-bg)] transition">
-                <div className="flex items-start justify-between gap-3 px-4 py-3.5">
-                  <div className="min-w-0">
-                    <Link href={`/verticals/${v.slug}`} className="block">
-                      <p className="font-semibold text-[var(--ipp-text)]">{v.name}</p>
-                      <p className="text-sm text-[var(--ipp-secondary)] truncate">{v.blurb}</p>
-                    </Link>
-                    <p className="mt-1 text-xs font-mono text-[var(--ipp-primary)]/80 truncate">
-                      {v.domains.slice(0, 3).map((d, i) => (
-                        <span key={d}>
-                          {i > 0 ? " · " : null}
-                          <DomainReferralLink
-                            domain={d}
-                            className="hover:text-[var(--ipp-accent)] hover:underline underline-offset-2"
-                          />
-                        </span>
-                      ))}
-                    </p>
-                  </div>
-                  <Link
-                    href={`/verticals/${v.slug}`}
-                    className="shrink-0 text-sm font-semibold text-[var(--ipp-accent)] pt-0.5"
-                  >
-                    View
-                  </Link>
-                </div>
-              </li>
-            ))
+            <>
+              {domainResults.length > 0 && (
+                <section>
+                  <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--ipp-secondary)]">
+                    Domains
+                  </p>
+                  <ul className="divide-y divide-[var(--border)]">
+                    {domainResults.map((d) => (
+                      <li key={d.domainName} className="hover:bg-[var(--ipp-bg)] transition">
+                        <Link href={d.href} className="flex items-start justify-between gap-3 px-4 py-3.5">
+                          <div className="min-w-0">
+                            <p className="font-mono font-semibold text-[var(--ipp-text)]">
+                              {d.displayName || formatDomainDisplay(d.domainName)}
+                            </p>
+                            <p className="text-sm text-[var(--ipp-secondary)] truncate">
+                              {d.verticalName}
+                              {d.categoryName ? ` · ${d.categoryName}` : ""}
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="text-sm font-bold tabular-nums text-[var(--ipp-text)]">
+                              {d.partnerScore}
+                            </p>
+                            <p className="text-xs text-[var(--ipp-secondary)]">
+                              {formatBrandValue(d.value)}
+                            </p>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {domainLoading && domainResults.length === 0 && (
+                <p className="px-4 py-3 text-sm text-[var(--ipp-secondary)]">Searching domains…</p>
+              )}
+
+              {verticalResults.length > 0 && (
+                <section className={domainResults.length > 0 ? "border-t border-[var(--border)]" : ""}>
+                  <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--ipp-secondary)]">
+                    Verticals
+                  </p>
+                  <ul className="divide-y divide-[var(--border)]">
+                    {verticalResults.map((v) => (
+                      <li key={v.slug} className="hover:bg-[var(--ipp-bg)] transition">
+                        <div className="flex items-start justify-between gap-3 px-4 py-3.5">
+                          <div className="min-w-0">
+                            <Link href={`/verticals/${v.slug}`} className="block">
+                              <p className="font-semibold text-[var(--ipp-text)]">{v.name}</p>
+                              <p className="text-sm text-[var(--ipp-secondary)] truncate">{v.blurb}</p>
+                            </Link>
+                          </div>
+                          <Link
+                            href={`/verticals/${v.slug}`}
+                            className="shrink-0 text-sm font-semibold text-[var(--ipp-accent)] pt-0.5"
+                          >
+                            View
+                          </Link>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </>
           )}
-        </ul>
+        </div>
       )}
     </div>
   );

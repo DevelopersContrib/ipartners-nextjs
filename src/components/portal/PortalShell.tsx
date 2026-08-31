@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logout } from "@/lib/auth-actions";
 
@@ -40,6 +40,11 @@ export default function PortalShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const discoverQuery =
+    pathname === "/portal/discover" || pathname.startsWith("/portal/discover/")
+      ? searchParams.get("q") ?? ""
+      : "";
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -97,6 +102,8 @@ export default function PortalShell({
               id="portal-search"
               name="q"
               type="search"
+              key={discoverQuery}
+              defaultValue={discoverQuery}
               placeholder="Search companies, domains…"
               className="h-10 w-full min-w-0 rounded-xl border border-zinc-200/90 bg-zinc-50/80 px-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition focus:border-zinc-300 focus:bg-white focus:ring-4 focus:ring-zinc-900/[0.04]"
             />

@@ -10,6 +10,7 @@ import {
   type PartnerScoreBand,
   type PartnerScoreBreakdown,
 } from "@/lib/partner-score";
+import { VERTICALS } from "@/lib/verticals";
 
 /** Same weight as manage-app TV_WEIGHTS.partner */
 const TV_PARTNER_DOLLARS = 2000;
@@ -21,6 +22,8 @@ export type VerticalBrand = {
   askingPrice: number | null;
   theoreticalTotal: number | null;
   categoryName: string | null;
+  /** domaindi_managedomain.category_id when present */
+  categoryId: number | null;
   leads: number;
   offers: number;
   /** Derived from TV partners dollars ÷ $2,000 */
@@ -230,6 +233,7 @@ export async function getVerticalBrandsByValue(
     asking_price: number | null;
     theoretical_total: number | null;
     category_name: string | null;
+    category_id: number | null;
     value: number;
     leads: number | null;
     offers: number | null;
@@ -250,6 +254,7 @@ export async function getVerticalBrandsByValue(
         d.offers,
         d.piwik_visits,
         d.cf_unique_visitors_30d AS cf_visitors,
+        d.category_id,
         tv.total AS theoretical_total,
         tv.partners AS partners_dollars,
         c.category_name,
@@ -289,6 +294,7 @@ export async function getVerticalBrandsByValue(
       askingPrice: r.asking_price != null ? n(r.asking_price) : null,
       theoreticalTotal: r.theoretical_total != null ? n(r.theoretical_total) : null,
       categoryName: r.category_name ? String(r.category_name) : null,
+      categoryId: r.category_id != null ? n(r.category_id) : null,
       leads: n(r.leads),
       offers: n(r.offers),
       partners:
@@ -342,4 +348,278 @@ export async function getVerticalBrandsByValue(
 /** Escape a string literal for embedding in raw SQL (patterns are allowlisted). */
 function escapeSqlString(s: string): string {
   return `'${s.replace(/\\/g, "\\\\").replace(/'/g, "''")}'`;
+}
+
+/** Public iPartner page for a single domain (BidCenter-style /d/ route). */
+export function domainPageHref(domain: string): string {
+  return `/d/${encodeURIComponent(normalizeDomainHost(domain))}`;
+}
+
+/** Match managedomain SQL LIKE patterns in JS (e.g. `%agent%`, `ai.%`). */
+function matchesLikePattern(domain: string, pattern: string): boolean {
+  const regex = pattern
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/%/g, ".*")
+    .replace(/_/g, ".");
+  return new RegExp(`^${regex}$`, "i").test(domain);
+}
+
+/** Infer curated vertical from VNOC category + domain name. */
+export function inferVerticalForBrand(
+  categoryId: number | null,
+  domainName: string,
+): { slug: string; name: string } {
+  const host = normalizeDomainHost(domainName);
+  for (const [slug, match] of Object.entries(VERTICAL_MATCH)) {
+    if (categoryId != null && match.categoryIds.includes(categoryId)) {
+      const v = VERTICALS.find((x) => x.slug === slug);
+      return { slug, name: v?.name ?? slug };
+    }
+    for (const pat of match.namePatterns) {
+      if (matchesLikePattern(host, pat)) {
+        const v = VERTICALS.find((x) => x.slug === slug);
+        return { slug, name: v?.name ?? slug };
+      }
+    }
+  }
+  return { slug: "domains", name: "Domains & Brands" };
+}
+
+type ManagedomainRow = {
+  domain_name: string;
+  asking_price: number | null;
+  theoretical_total: number | null;
+  category_name: string | null;
+  category_id: number | null;
+  value: number;
+  leads: number | null;
+  offers: number | null;
+  partners_dollars: number | null;
+  piwik_visits: number | null;
+  cf_visitors: number | null;
+};
+
+function rowToVerticalBrand(
+  r: ManagedomainRow,
+  traffic: Awaited<ReturnType<typeof fetchDomainsTraffic>>,
+): VerticalBrand {
+  const partnersDollars = n(r.partners_dollars);
+  const base = {
+    domainName: String(r.domain_name),
+    value: n(r.value),
+    askingPrice: r.asking_price != null ? n(r.asking_price) : null,
+    theoreticalTotal: r.theoretical_total != null ? n(r.theoretical_total) : null,
+    categoryName: r.category_name ? String(r.category_name) : null,
+    categoryId: r.category_id != null ? n(r.category_id) : null,
+    leads: n(r.leads),
+    offers: n(r.offers),
+    partners:
+      partnersDollars > 0 ? Math.round(partnersDollars / TV_PARTNER_DOLLARS) : 0,
+    visits: Math.max(n(r.piwik_visits), n(r.cf_visitors)),
+  };
+  const t = traffic.get(base.domainName.toLowerCase());
+  const uv7 = t?.uniqueVisitors7d ?? 0;
+  const uv30 = t?.uniqueVisitors30d ?? (base.visits || 0);
+  const pv7 = t?.pageviews7d ?? 0;
+  const pv30 = t?.pageviews30d ?? 0;
+  const scored = computePartnerScore({
+    uniqueVisitors7d: uv7,
+    uniqueVisitors30d: uv30,
+    pageviews7d: pv7,
+    pageviews30d: pv30,
+    partners: base.partners,
+    leads: base.leads,
+    offers: base.offers,
+    theoreticalValue: base.theoreticalTotal ?? base.value,
+    askingPrice: base.askingPrice,
+  });
+  return {
+    ...base,
+    uniqueVisitors7d: uv7,
+    uniqueVisitors30d: uv30,
+    pageviews7d: pv7,
+    pageviews30d: pv30,
+    partnerScore: scored.partnerScore,
+    partnerBand: scored.band,
+    partnerLabel: scored.label,
+    partnerBreakdown: scored.breakdown,
+  };
+}
+
+/**
+ * Direct lookup of one active VNOC managedomain row — live read, no local sync table.
+ * Returns null when the domain is missing, sold, or inactive.
+ */
+export async function getBrandByDomain(domain: string): Promise<VerticalBrand | null> {
+  if (!process.env.CONTRIB_DATABASE_URL?.trim()) return null;
+
+  const host = normalizeDomainHost(domain);
+  if (!host || !host.includes(".")) return null;
+
+  type Row = ManagedomainRow;
+
+  let rows: Row[] = [];
+  try {
+    rows = await prisma.$queryRawUnsafe<Row[]>(`
+      SELECT
+        d.domain_name,
+        d.price AS asking_price,
+        d.leads,
+        d.offers,
+        d.piwik_visits,
+        d.cf_unique_visitors_30d AS cf_visitors,
+        d.category_id,
+        tv.total AS theoretical_total,
+        tv.partners AS partners_dollars,
+        c.category_name,
+        COALESCE(tv.total, d.price, 0) AS value
+      FROM domaindi_managedomain.domain d
+      LEFT JOIN domaindi_managedomain.category c
+        ON c.category_id = d.category_id
+      LEFT JOIN (
+        SELECT domain_id,
+          MAX(total) AS total,
+          MAX(partners) AS partners
+        FROM domaindi_managedomain.domain_theoretical_value
+        GROUP BY domain_id
+      ) tv ON tv.domain_id = d.domain_id
+      WHERE d.domain_name = ${escapeSqlString(host)}
+        AND d.domain_status = 'active'
+        AND (d.sold IS NULL OR d.sold = 0)
+        AND (d.flag_delete IS NULL OR d.flag_delete = 0)
+      LIMIT 1
+    `);
+  } catch (err) {
+    console.error("[vertical-brands] getBrandByDomain failed:", err);
+    return null;
+  }
+
+  const row = rows[0];
+  if (!row) return null;
+
+  const traffic = await fetchDomainsTraffic([String(row.domain_name)]);
+  return rowToVerticalBrand(row, traffic);
+}
+
+const ACTIVE_DOMAIN_SQL = `
+  d.domain_status = 'active'
+  AND (d.sold IS NULL OR d.sold = 0)
+  AND (d.flag_delete IS NULL OR d.flag_delete = 0)
+  AND d.domain_name IS NOT NULL
+  AND d.domain_name != ''
+`;
+
+/** Sanitize free-text domain search for SQL LIKE (alphanumeric, dot, hyphen, space). */
+function sanitizeSearchQuery(query: string): string {
+  return query
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, "")
+    .replace(/[^a-z0-9.\-\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function queryManagedomainRows(
+  whereExtra: string,
+  orderBy: string,
+  limit: number,
+): Promise<ManagedomainRow[]> {
+  const safeLimit = Math.min(Math.max(1, Math.floor(limit)), 100);
+  return prisma.$queryRawUnsafe<ManagedomainRow[]>(`
+    SELECT
+      d.domain_name,
+      d.price AS asking_price,
+      d.leads,
+      d.offers,
+      d.piwik_visits,
+      d.cf_unique_visitors_30d AS cf_visitors,
+      d.category_id,
+      tv.total AS theoretical_total,
+      tv.partners AS partners_dollars,
+      c.category_name,
+      COALESCE(tv.total, d.price, 0) AS value
+    FROM domaindi_managedomain.domain d
+    LEFT JOIN domaindi_managedomain.category c
+      ON c.category_id = d.category_id
+    LEFT JOIN (
+      SELECT domain_id,
+        MAX(total) AS total,
+        MAX(partners) AS partners
+      FROM domaindi_managedomain.domain_theoretical_value
+      GROUP BY domain_id
+    ) tv ON tv.domain_id = d.domain_id
+    WHERE ${ACTIVE_DOMAIN_SQL}
+      AND (${whereExtra})
+    ORDER BY ${orderBy}
+    LIMIT ${safeLimit}
+  `);
+}
+
+/**
+ * Search live VNOC managedomain inventory by domain name or category.
+ * Used by portal Discover and public domain search.
+ */
+export async function searchBrandsByQuery(
+  query: string,
+  limit = 24,
+): Promise<VerticalBrand[]> {
+  if (!process.env.CONTRIB_DATABASE_URL?.trim()) return [];
+
+  const q = sanitizeSearchQuery(query);
+  if (!q || q.length < 2) return [];
+
+  const safeLimit = Math.min(Math.max(1, Math.floor(limit)), 100);
+  const results: VerticalBrand[] = [];
+  const seen = new Set<string>();
+
+  const pushRows = async (rows: ManagedomainRow[]) => {
+    if (!rows.length) return;
+    const traffic = await fetchDomainsTraffic(rows.map((r) => String(r.domain_name)));
+    for (const row of rows) {
+      const key = String(row.domain_name).toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      results.push(rowToVerticalBrand(row, traffic));
+    }
+  };
+
+  try {
+    if (q.includes(".")) {
+      const exact = await getBrandByDomain(q);
+      if (exact) {
+        seen.add(exact.domainName.toLowerCase());
+        results.push(exact);
+      }
+    }
+
+    const like = `%${q.replace(/\s+/g, "%")}%`;
+    const host = normalizeDomainHost(q);
+    const prefix = `${host}%`;
+    const rows = await queryManagedomainRows(
+      `LOWER(d.domain_name) LIKE ${escapeSqlString(like)}
+        OR LOWER(c.category_name) LIKE ${escapeSqlString(like)}`,
+      `CASE
+          WHEN LOWER(d.domain_name) = ${escapeSqlString(host)} THEN 0
+          WHEN LOWER(d.domain_name) LIKE ${escapeSqlString(prefix)} THEN 1
+          ELSE 2
+        END,
+        value DESC,
+        d.domain_name ASC`,
+      safeLimit,
+    );
+    await pushRows(rows);
+  } catch (err) {
+    console.error("[vertical-brands] searchBrandsByQuery failed:", err);
+    return results;
+  }
+
+  results.sort(
+    (a, b) =>
+      b.partnerScore - a.partnerScore ||
+      b.value - a.value ||
+      a.domainName.localeCompare(b.domainName),
+  );
+
+  return results.slice(0, safeLimit);
 }

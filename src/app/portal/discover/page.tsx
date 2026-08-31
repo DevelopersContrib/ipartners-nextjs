@@ -142,6 +142,18 @@ export default async function DiscoverPage({
         </p>
       )}
 
+      {q && (
+        <p className="text-xs text-zinc-500">
+          {opportunities.length > 0
+            ? `${opportunities.length} result${opportunities.length === 1 ? "" : "s"} for “${q}”`
+            : `No results for “${q}”`}
+          .{" "}
+          <Link href={filterHref({ q: undefined })} className="underline underline-offset-2">
+            Clear search
+          </Link>
+        </p>
+      )}
+
       {opportunities.length === 0 ? (
         <p className="py-12 text-center text-sm text-zinc-500">
           Nothing matched these filters. Try another vertical or clear search.

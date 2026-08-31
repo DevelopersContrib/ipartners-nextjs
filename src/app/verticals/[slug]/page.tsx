@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import BrandLogo from "@/components/BrandLogo";
 import DomainReferralLink from "@/components/DomainReferralLink";
 import {
+  domainPageHref,
   formatBrandStat,
   formatBrandValue,
   formatDomainDisplay,
@@ -182,12 +183,12 @@ export default async function VerticalDetailPage({ params }: Props) {
                           </p>
                         </div>
                         <h3 className="mt-0.5 font-mono text-sm sm:text-base font-semibold min-w-0">
-                          <DomainReferralLink
-                            domain={b.domainName}
+                          <Link
+                            href={domainPageHref(b.domainName)}
                             className="block truncate text-[var(--ipp-primary)] hover:text-[var(--ipp-accent)] hover:underline underline-offset-2"
                           >
                             {formatDomainDisplay(b.domainName)}
-                          </DomainReferralLink>
+                          </Link>
                         </h3>
                         <p className="mt-0.5 text-xs font-medium text-[var(--ipp-secondary)] line-clamp-2">
                           {b.partnerLabel}

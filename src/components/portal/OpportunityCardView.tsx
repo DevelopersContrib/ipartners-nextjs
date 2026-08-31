@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
+import { domainPageHref } from "@/lib/vertical-brands";
 import {
   formatDomainDisplay,
   formatBrandStat,
@@ -52,7 +53,7 @@ export default function OpportunityCardView({
 
       <div className="flex flex-wrap gap-2 pt-0.5">
         <Link
-          href={`/portal/opportunities/${encodeURIComponent(o.domainName)}`}
+          href={domainPageHref(o.domainName)}
           className="inline-flex min-h-10 flex-1 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-50 sm:flex-none"
         >
           View
