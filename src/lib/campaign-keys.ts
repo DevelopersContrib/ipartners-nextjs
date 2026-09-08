@@ -16,7 +16,7 @@ export const NUDGE_CAMPAIGN_KEYS = [
 ] as const;
 
 /** Ops-triggered extras (not tied to status). */
-export const EXTRA_CAMPAIGN_KEYS = ["sponsor_invoice"] as const;
+export const EXTRA_CAMPAIGN_KEYS = ["sponsor_invoice", "needs_info"] as const;
 
 export const CAMPAIGN_KEYS = [
   ...LIFECYCLE_CAMPAIGN_KEYS,

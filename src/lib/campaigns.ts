@@ -50,6 +50,8 @@ export type EngagementMailContext = {
   status: string;
   tier?: string | null;
   firstName?: string | null;
+  /** For needs_info campaign: the AI-generated reason / ask. */
+  reviewReason?: string | null;
 };
 
 export type CampaignSendResult = {
@@ -172,6 +174,23 @@ function buildTemplate(
           <p>Questions: <a href="mailto:hello@ipartner.com">hello@ipartner.com</a></p>
         `),
         text: `Hi ${name},\n\nThanks for your interest in sponsoring ${scopeLine(e)} (${tierLabel}).\n\nInvestment: ${price} (annual).\n\nReply to this email for payment instructions / invoice. Checkout is coming soon.\n\nhello@ipartner.com\nPortal: ${portal}\n\n— The iPartner team`,
+      };
+    }
+    case "needs_info": {
+      const ask = (e.reviewReason || "").trim();
+      const askHtml = ask
+        ? `<p>Specifically, we'd like to know:</p><blockquote style="margin:12px 0;padding:10px 14px;border-left:3px solid #cbd5e1;color:#334155;background:#f8fafc;border-radius:0 6px 6px 0">${escapeHtml(ask)}</blockquote>`
+        : `<p>Could you tell us a bit more about what you'd like to do and how you see the partnership working?</p>`;
+      return {
+        subject: `Quick question about your iPartner application — ${scopeLine(e)}`,
+        html: wrap(`
+          <p>Thanks for your interest in <strong>${scope}</strong> as a <strong>${mode}</strong> partner.</p>
+          <p>We're reviewing your application and need a little more information before we can move forward.</p>
+          ${askHtml}
+          <p>Just reply to this email with the details and we'll continue the review.</p>
+          <p>Questions: <a href="mailto:hello@ipartner.com">hello@ipartner.com</a></p>
+        `),
+        text: `Hi ${name},\n\nThanks for your interest in ${scopeLine(e)} as a ${modeLabel(e.mode)} partner.\n\nWe need a little more information before we can move forward.\n\n${ask || "Could you tell us a bit more about what you'd like to do and how you see the partnership working?"}\n\nJust reply to this email with the details.\n\nhello@ipartner.com\nPortal: ${portal}\n\n— The iPartner team`,
       };
     }
     case "nudge_pending":
