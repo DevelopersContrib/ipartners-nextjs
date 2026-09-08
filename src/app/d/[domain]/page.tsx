@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       type: "website",
-      url: `https://ipartner.com/d/${encodeURIComponent(host)}`,
+      url: `https://www.ipartner.com/d/${encodeURIComponent(host)}`,
     },
   };
 }
