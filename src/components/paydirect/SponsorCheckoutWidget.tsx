@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
 import {
   PayDirectProvider,
   CheckoutWidget,
@@ -41,6 +42,19 @@ export default function SponsorCheckoutWidget({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const firedCheckoutStart = useRef(false);
+
+  useEffect(() => {
+    if (!firedCheckoutStart.current) {
+      firedCheckoutStart.current = true;
+      trackMarketingEvent("checkout_start", {
+        tier,
+        vertical,
+        amount,
+        currency: "USD",
+      });
+    }
+  }, [tier, vertical, amount]);
 
   const metadata: Record<string, string> = {
     product: "ipartner_sponsor",
@@ -72,6 +86,13 @@ export default function SponsorCheckoutWidget({
         if (!res.ok) {
           const data = (await res.json().catch(() => ({}))) as { error?: string };
           setError(data.error || "Could not save payment locally");
+        } else {
+          trackMarketingEvent("payment_recorded", {
+            tier,
+            vertical,
+            payment_method: payment.paymentMethod || "unknown",
+            status: "success",
+          });
         }
         setDone(true);
         router.push(
