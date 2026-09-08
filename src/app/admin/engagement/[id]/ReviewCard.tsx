@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { rereviewEngagement } from "@/lib/admin-actions";
+import { rereviewEngagement, sendNeedsInfoEmail } from "@/lib/admin-actions";
 
 type Review = {
   verdict: string;
@@ -38,7 +38,9 @@ export default function ReviewCard({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [sendingNeedsInfo, startNeedsInfoTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [needsInfoSent, setNeedsInfoSent] = useState(false);
 
   const rerun = () => {
     startTransition(async () => {
@@ -46,6 +48,20 @@ export default function ReviewCard({
       const res = await rereviewEngagement(engagementId);
       if (!res.ok) setError(res.error || "Re-screen failed");
       else router.refresh();
+    });
+  };
+
+  const sendNeedsInfo = () => {
+    startNeedsInfoTransition(async () => {
+      setError(null);
+      const res = await sendNeedsInfoEmail(engagementId, {
+        reviewReason: review?.reason,
+      });
+      if (!res.ok) setError(res.error || "Send failed");
+      else {
+        setNeedsInfoSent(true);
+        router.refresh();
+      }
     });
   };
 
@@ -118,6 +134,32 @@ export default function ReviewCard({
               ? ` · ${new Date(review.reviewedAt).toLocaleString("en-US")}`
               : ""}
           </p>
+
+          {review.verdict === "needs_info" && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+              <p className="text-xs text-amber-900 mb-2">
+                Draft a &ldquo;what we still need&rdquo; email to the partner.
+                The AI reason above will be included in the email body.
+              </p>
+              <button
+                type="button"
+                onClick={sendNeedsInfo}
+                disabled={sendingNeedsInfo || needsInfoSent}
+                className="min-h-9 rounded-lg bg-amber-600 px-4 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-40"
+              >
+                {sendingNeedsInfo
+                  ? "Sending…"
+                  : needsInfoSent
+                    ? "Sent ✓"
+                    : "Send needs-info email"}
+              </button>
+              {needsInfoSent && (
+                <p className="mt-1.5 text-[11px] text-amber-700">
+                  Email sent. Check Campaign Sends below.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
     </section>

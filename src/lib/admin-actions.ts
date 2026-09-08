@@ -372,6 +372,48 @@ export async function sendSponsorInvoice(
   return { ok: true, id: String(engagementId) };
 }
 
+/**
+ * Send a "needs info" follow-up email drafted from the AI review.
+ * Admin clicks to send — never auto-sent. Persisted in ipp_campaign_send.
+ */
+export async function sendNeedsInfoEmail(
+  id: string,
+  opts?: { force?: boolean; reviewReason?: string }
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const engagementId = parseId(id);
+  if (!engagementId) return { ok: false, error: "Invalid id" };
+
+  const row = await prisma.ippEngagement.findUnique({ where: { id: engagementId } });
+  if (!row) return { ok: false, error: "Engagement not found" };
+
+  const res = await sendEngagementCampaign(
+    {
+      id: row.id,
+      email: row.email,
+      mode: row.mode,
+      scopeValue: row.scopeValue,
+      status: row.status,
+      tier: row.tier,
+      reviewReason: opts?.reviewReason,
+    },
+    "needs_info",
+    { force: opts?.force ?? false }
+  );
+
+  console.log(
+    `[admin] ${admin.email} needs_info email for #${engagementId}: ${res.ok ? "ok" : res.reason}`
+  );
+  revalidateEngagement(engagementId);
+  if (!res.ok && !res.skipped) {
+    return { ok: false, error: res.reason || "Send failed" };
+  }
+  if (res.skipped) {
+    return { ok: false, error: res.reason || "Already sent (use force to resend)" };
+  }
+  return { ok: true, id: String(engagementId) };
+}
+
 export async function deleteEngagementAdmin(id: string): Promise<ActionResult> {
   const admin = await requireAdmin();
   const engagementId = parseId(id);
