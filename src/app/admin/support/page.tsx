@@ -75,7 +75,7 @@ export default function AdminSupportPage() {
           Support
         </h1>
         <p className="text-gray-400 mt-1 text-sm">
-          AI-first contact + inbound email · <code className="text-gray-500">site=referrals</code>
+          AI-first contact + inbound email · <code className="text-gray-500">site=ipartner</code>
         </p>
       </div>
 
@@ -130,7 +130,7 @@ export default function AdminSupportPage() {
 
       {!loading && tickets.length === 0 && (
         <div className="rounded-xl border border-white/10 bg-[#292A2D] p-6 text-gray-400">
-          No tickets yet. Submit the contact form or email support@referrals.com.
+          No tickets yet. Submit the contact form or email hello@ipartner.com.
         </div>
       )}
 

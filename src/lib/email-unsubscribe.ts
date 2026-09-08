@@ -8,12 +8,12 @@ function siteUrl(): string {
   return (
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.SITE_URL ||
-    "https://www.referrals.com"
+    "https://ipartner.com"
   ).replace(/\/$/, "");
 }
 
 function secret(): string {
-  return process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || "referrals-dev";
+  return process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || "ipartner-dev";
 }
 
 function sign(memberId: number, email: string): string {

@@ -163,15 +163,21 @@ function buildTemplate(
       const tierLabel = tierKey
         ? tierKey.charAt(0).toUpperCase() + tierKey.slice(1)
         : "sponsorship";
+      const base =
+        process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") ||
+        "https://ipartner.com";
+      const checkoutHref = `${base}/checkout/sponsor?tier=${encodeURIComponent(tierKey)}&vertical=${encodeURIComponent(e.scopeValue || "")}`;
       return {
         subject: `Sponsorship invoice — ${tierLabel} for ${scopeLine(e)}`,
         html: wrap(`
           <p>Thanks for your interest in sponsoring <strong>${scope}</strong> at the <strong>${escapeHtml(tierLabel)}</strong> tier.</p>
           <p><strong>Investment:</strong> ${escapeHtml(price)} (billed annually).</p>
-          <p>Self-serve checkout is coming soon. To proceed now, reply to this email and our team will send payment instructions / an invoice.</p>
+          <p>Complete your sponsorship via our secure checkout:</p>
+          <p><a href="${escapeHtml(checkoutHref)}" style="color:#223843;font-weight:600">Go to checkout →</a></p>
+          <p>Prefer to pay by invoice? Reply to this email and our team will send payment instructions.</p>
           <p>Questions: <a href="mailto:hello@ipartner.com">hello@ipartner.com</a></p>
         `),
-        text: `Hi ${name},\n\nThanks for your interest in sponsoring ${scopeLine(e)} (${tierLabel}).\n\nInvestment: ${price} (annual).\n\nReply to this email for payment instructions / invoice. Checkout is coming soon.\n\nhello@ipartner.com\nPortal: ${portal}\n\n— The iPartner team`,
+        text: `Hi ${name},\n\nThanks for your interest in sponsoring ${scopeLine(e)} (${tierLabel}).\n\nInvestment: ${price} (annual).\n\nCheckout: ${checkoutHref}\n\nPrefer invoice? Reply to this email for payment instructions.\n\nhello@ipartner.com\nPortal: ${portal}\n\n— The iPartner team`,
       };
     }
     case "nudge_pending":
