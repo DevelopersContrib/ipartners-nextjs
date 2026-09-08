@@ -331,7 +331,7 @@ export async function resendEngagementCampaign(
   return { ok: true, id: String(engagementId) };
 }
 
-/** MVP sponsor streamline: email invoice / payment next-steps (no checkout yet). */
+/** Email sponsor invoice with checkout link and payment next-steps. */
 export async function sendSponsorInvoice(
   id: string,
   opts?: { force?: boolean }

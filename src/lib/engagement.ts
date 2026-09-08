@@ -41,12 +41,12 @@ export function rfEngagementConfig(): EngagementConfig {
   const siteUrl = (
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.SITE_URL ||
-    "https://www.ipartners.com"
+    "https://ipartner.com"
   ).replace(/\/$/, "");
   return {
     domainKey: IP_DOMAIN_KEY,
     domainId: Number(process.env.ENGAGEMENT_VNOC_DOMAIN_ID || RF_VNOC_DOMAIN_ID),
-    siteName: process.env.ENGAGEMENT_SITE_NAME || "Referrals",
+    siteName: process.env.ENGAGEMENT_SITE_NAME || "iPartner",
     siteUrl,
     campaignKey: IP_ENGAGEMENT_CAMPAIGN,
     vnocCampaignId: Number(process.env.ENGAGEMENT_VNOC_CAMPAIGN_ID || 0),

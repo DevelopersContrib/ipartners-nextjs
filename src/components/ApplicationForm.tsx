@@ -410,7 +410,7 @@ export default function ApplicationForm({
                     ))}
                   </select>
                   <p className="mt-1 text-xs text-[var(--ipp-secondary)]">
-                    Checkout is not live yet — this registers sponsor interest for follow-up.
+                    After approval, you can complete payment via our secure checkout.
                   </p>
                 </div>
               </>

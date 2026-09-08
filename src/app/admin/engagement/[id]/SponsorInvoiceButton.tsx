@@ -19,7 +19,7 @@ export default function SponsorInvoiceButton({
     <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
       <p className="text-sm font-semibold text-[var(--ipp-text)]">Sponsor invoice</p>
       <p className="mt-1 text-xs text-[var(--ipp-secondary)]">
-        Checkout isn&apos;t live yet. Email payment next-steps for the{" "}
+        Email checkout link and payment next-steps for the{" "}
         <span className="capitalize">{tier || "unset"}</span> tier (Bronze $500 / Silver
         $2,500 / Gold $10,000 per year).
       </p>

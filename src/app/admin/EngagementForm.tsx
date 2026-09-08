@@ -176,7 +176,7 @@ export default function EngagementForm({
           </select>
           {engagementMode === "sponsor" && (
             <p className="mt-1 text-[11px] text-[var(--ipp-secondary)]">
-              Required for sponsor interest. Checkout is not live.
+              Required for sponsor interest.
             </p>
           )}
         </div>

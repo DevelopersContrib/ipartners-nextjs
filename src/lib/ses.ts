@@ -70,7 +70,7 @@ export interface SendEmailArgs {
 export async function sendEmail(
   opts: SendEmailArgs,
 ): Promise<{ sent: boolean; messageId?: string }> {
-  const from = opts.from || process.env.SES_FROM_EMAIL || "no-reply@ipartners.com";
+  const from = opts.from || process.env.SES_FROM_EMAIL || "no-reply@ipartner.com";
   const client = getClient();
   const toList = Array.isArray(opts.to) ? opts.to : [opts.to];
 

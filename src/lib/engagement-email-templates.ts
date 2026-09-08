@@ -11,6 +11,21 @@ import { IP_DOMAIN_KEY, IP_ENGAGEMENT_CAMPAIGN } from "@/lib/engagement";
 
 const LOGO_URL = "https://d1p6j71028fbjm.cloudfront.net/logos/logo-new-referral-1.png";
 
+/**
+ * DRIP DISABLED (Sprint Sep 7–11, Story 3).
+ *
+ * The 10-email feature tour below is Referrals-branded with /dashboard,
+ * /brands, /stats CTAs that don't exist on iPartner. Rather than ship
+ * half-rewritten copy to iPartner partners, all enrollment and send
+ * functions are gated behind ENGAGEMENT_DRIP_ENABLED. Set it to "true"
+ * only after the email content has been fully rewritten for iPartner
+ * (/portal, /portal/deals, /portal/discover, /portal/placements).
+ */
+export function isDripEnabled(): boolean {
+  const flag = (process.env.ENGAGEMENT_DRIP_ENABLED || "false").trim().toLowerCase();
+  return flag === "1" || flag === "true" || flag === "on";
+}
+
 export const ENGAGEMENT_EMAILS_PER_SEGMENT = 10;
 
 export function buildBrandedEngagementEmail(opts: {
@@ -41,9 +56,9 @@ export function buildBrandedEngagementEmail(opts: {
         · Referral marketing that grows with you
       </p>
       <p style="margin:8px 0 0;">
-        <a href="{{siteUrl}}/dashboard" style="color:#fda4af;text-decoration:none;">Dashboard</a>
+        <a href="{{siteUrl}}/portal" style="color:#fda4af;text-decoration:none;">Portal</a>
         ·
-        <a href="{{siteUrl}}/account" style="color:#a8a29e;text-decoration:none;">Account</a>
+        <a href="{{siteUrl}}/portal/deals" style="color:#a8a29e;text-decoration:none;">Deals</a>
       </p>
     </div>
   </div>
@@ -370,6 +385,7 @@ export async function applyWelcomeEmailTemplates(
   domainKey = IP_DOMAIN_KEY,
   campaignKey = IP_ENGAGEMENT_CAMPAIGN
 ) {
+  if (!isDripEnabled()) return 0;
   let touched = 0;
   for (const t of WELCOME_EMAIL_TEMPLATES) {
     await upsertActivationStep(
@@ -401,6 +417,7 @@ export async function ensureTenEmailsOnCampaign(
     flavor?: "paid" | "new" | "active_free" | "stalled" | "generic";
   }
 ): Promise<{ added: number; total: number }> {
+  if (!isDripEnabled()) return { added: 0, total: 0 };
   const domainKey = opts?.domainKey ?? IP_DOMAIN_KEY;
   const drafts = tenEmailSequenceForSegment(
     opts?.segmentName || "Members",
@@ -469,6 +486,7 @@ export async function aiImproveActivationEmails(
   domainKey = IP_DOMAIN_KEY,
   campaignKey = IP_ENGAGEMENT_CAMPAIGN
 ): Promise<{ touched: number; ai: boolean }> {
+  if (!isDripEnabled()) return { touched: 0, ai: false };
   let drafts: AiActivationDraft[] | null = null;
   let usedAi = false;
 
