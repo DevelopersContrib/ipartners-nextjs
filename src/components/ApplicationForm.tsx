@@ -9,6 +9,7 @@ import type { EngagementMode } from '@/lib/engagement-modes';
 import { VERTICALS } from '@/lib/verticals';
 import { SPONSOR_TIERS } from '@/lib/admin-client';
 import { FALLBACK_FORM_DATA, FALLBACK_COUNTRIES, resolveFormData } from '@/lib/form-options';
+import { trackMarketingEvent } from '@/lib/marketing-analytics';
 
 interface ApplicationFormProps {
   partnershipType: PartnershipType;
@@ -213,6 +214,13 @@ export default function ApplicationForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Submission failed');
+      trackMarketingEvent("apply_submit", {
+        mode: engagementMode || partnershipType,
+        vertical: engagementMode === "sponsor" ? sponsorVertical : (vertical || ""),
+        tier: engagementMode === "sponsor" ? sponsorTier : "",
+        partnership_type: partnershipType,
+        has_referral: !!document.cookie.match(/ipp_ref=/),
+      });
       setSubmitted(true);
       const next = typeof data.next === 'string' ? data.next : '/portal/deals?applied=1';
       // Land signed-in partners on Deals; login redirect handles guests.

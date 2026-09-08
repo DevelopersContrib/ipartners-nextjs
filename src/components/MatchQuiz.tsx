@@ -15,6 +15,7 @@ import {
   matchDiscoverHref,
   matchApplyHref,
 } from "@/lib/match-intent";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 const INTERESTS: { id: MatchInterest; title: string; desc: string }[] = [
   { id: "sponsor", title: "Sponsor a category", desc: "Put my brand next to premium domains" },
@@ -60,6 +61,12 @@ export default function MatchQuiz() {
         verticals: matched.verticals.map((v) => v.slug),
         commitment: c,
         primaryVertical: matched.verticals[0]?.slug,
+      });
+      trackMarketingEvent("match_complete", {
+        mode: matched.mode,
+        primary_vertical: matched.verticals[0]?.slug,
+        vertical_count: matched.verticals.length,
+        commitment: c,
       });
       setResult(matched);
       setStep(3);
