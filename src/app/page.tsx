@@ -3,7 +3,7 @@ import { VERTICALS } from "@/lib/verticals";
 import PartnerSearch from "@/components/PartnerSearch";
 import CategoryCards from "@/components/CategoryCards";
 import HowItWorks from "@/components/HowItWorks";
-import FeaturedReview from "@/components/FeaturedReview";
+import MarketingProof from "@/components/MarketingProof";
 import NetworkSection from "@/components/NetworkSection";
 import SponsorshipPricing from "@/components/SponsorshipPricing";
 
@@ -61,8 +61,8 @@ export default function HomePage() {
             lives.
           </h1>
           <p className="mt-6 max-w-xl text-base sm:text-lg text-[var(--ipp-secondary)] leading-relaxed animate-fade-in-up-delay-1">
-            We own the names people type. Sponsor a vertical and appear across every site in it —
-            or take an equity stake and build one with us.
+            We own the names people type. Sponsor a vertical and appear across
+            every site in it — or take an equity stake and build one with us.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-3 animate-fade-in-up-delay-2">
             <Link
@@ -92,7 +92,9 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div className="max-w-md">
-              <h2 className="ipp-loud text-3xl sm:text-4xl text-[var(--ipp-text)]">Search.</h2>
+              <h2 className="ipp-loud text-3xl sm:text-4xl text-[var(--ipp-text)]">
+                Search.
+              </h2>
               <p className="mt-2 text-[var(--ipp-secondary)]">
                 Find a vertical or domain — then open the category page.
               </p>
@@ -109,9 +111,12 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 sm:mb-10">
             <div>
-              <h2 className="ipp-loud text-3xl sm:text-5xl text-[var(--ipp-text)]">Categories.</h2>
+              <h2 className="ipp-loud text-3xl sm:text-5xl text-[var(--ipp-text)]">
+                Categories.
+              </h2>
               <p className="mt-3 text-[var(--ipp-secondary)] max-w-lg">
-                Best brands per vertical — tap a card for the story, featured domains, and how to partner.
+                Best brands per vertical — tap a card for the story, featured
+                domains, and how to partner.
               </p>
             </div>
             <Link
@@ -131,15 +136,18 @@ export default function HomePage() {
       {/* 5 — Four steps */}
       <HowItWorks />
 
-      {/* 6 — Review */}
-      <FeaturedReview />
+      {/* 6 — Marketing proof / how sponsorship works */}
+      <MarketingProof />
 
       {/* 7 — How to partner */}
       <section className="ipp-band ipp-band-b">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-          <h2 className="ipp-loud text-3xl sm:text-5xl text-[var(--ipp-text)]">How to partner.</h2>
+          <h2 className="ipp-loud text-3xl sm:text-5xl text-[var(--ipp-text)]">
+            How to partner.
+          </h2>
           <p className="mt-3 text-[var(--ipp-secondary)] max-w-xl">
-            One identity. Many engagements. Pick the mode that fits — or take the free match.
+            One identity. Many engagements. Pick the mode that fits — or take
+            the free match.
           </p>
           <ul className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {MODES.map((m) => (
@@ -149,7 +157,9 @@ export default function HomePage() {
                   className="block h-full rounded-2xl border border-[var(--border)] bg-white/90 p-5 hover:border-[var(--ipp-accent)] hover:bg-white transition"
                 >
                   <p className="font-bold text-[var(--ipp-text)]">{m.title}</p>
-                  <p className="mt-1.5 text-sm text-[var(--ipp-secondary)] leading-relaxed">{m.desc}</p>
+                  <p className="mt-1.5 text-sm text-[var(--ipp-secondary)] leading-relaxed">
+                    {m.desc}
+                  </p>
                 </Link>
               </li>
             ))}
@@ -175,7 +185,8 @@ export default function HomePage() {
             Ready when you are.
           </h2>
           <p className="mt-4 text-white/75 max-w-md">
-            Apply in minutes — or sign in to see every engagement in one dashboard.
+            Apply in minutes — or sign in to see every engagement in one
+            dashboard.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
             <Link
