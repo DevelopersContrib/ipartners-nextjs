@@ -32,16 +32,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "iPartner - Be an IPartner Today",
+  metadataBase: new URL("https://ipartner.com"),
+  title: "iPartner — category sponsorship & domain partnerships",
   description:
-    "iPartner was formed to create a more structured way of creating, filtering and growing relationships. Join us to help monetize and build the brands of the future.",
-  keywords: "ipartner, partnerships, domain partnerships, app partnerships, contrib",
+    "Put your brand where the category already lives. Sponsor a vertical across the network — Bronze, Silver, or Gold — or partner on a premium domain.",
+  keywords:
+    "ipartner, sponsorship, category sponsorship, domain partnerships, bronze silver gold",
   openGraph: {
-    title: "iPartner - Be an IPartner Today",
+    title: "iPartner — put your brand where the category already lives",
     description:
-      "Create structured partnerships and help build the brands of the future.",
+      "Category placement across the network. Sponsor Bronze, Silver, or Gold — or partner on a premium domain.",
     type: "website",
     url: "https://ipartner.com",
+    siteName: "iPartner",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "iPartner — put your brand where the category already lives",
+    description:
+      "Category placement across the network. Sponsor Bronze, Silver, or Gold — or partner on a premium domain.",
   },
 };
 
@@ -86,9 +96,7 @@ export default async function RootLayout({
       lang="en"
       className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        {vnoc && <link rel="preconnect" href={vnoc.endpoint} />}
-      </head>
+      <head>{vnoc && <link rel="preconnect" href={vnoc.endpoint} />}</head>
       <body className={`${comfortaa.className} min-h-full flex flex-col`}>
         <style>{`
           h1, h2, h3, h4, .ipp-loud {
