@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePartner } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { MODE_LABELS, statusLabel, type EngagementMode } from "@/lib/engagement-modes";
+import {
+  MODE_LABELS,
+  statusLabel,
+  type EngagementMode,
+} from "@/lib/engagement-modes";
 import {
   getDiscoverOpportunities,
   formatDomainDisplay,
@@ -55,7 +59,8 @@ export default async function PortalHomePage() {
           Hi {name}. New opportunities are waiting.
         </h1>
         <p className="max-w-xl text-sm leading-relaxed text-zinc-500 sm:text-base">
-          Browse partnership matches across the network — then apply, follow up, and grow.
+          Browse partnership matches across the network — then apply, follow up,
+          and grow.
         </p>
         <div className="pt-1 sm:pt-2">
           <Link
@@ -69,7 +74,9 @@ export default async function PortalHomePage() {
 
       <section className="space-y-3">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-sm font-semibold text-zinc-900">New partnership matches</h2>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            New partnership matches
+          </h2>
           <Link
             href="/portal/discover"
             className="shrink-0 text-xs font-medium text-zinc-500 hover:text-zinc-900"
@@ -79,7 +86,8 @@ export default async function PortalHomePage() {
         </div>
         {matches.length === 0 ? (
           <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-500 sm:p-6">
-            No fresh matches yet — explore Discover to browse the full inventory.
+            No fresh matches yet — explore Discover to browse the full
+            inventory.
           </div>
         ) : (
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -113,7 +121,9 @@ export default async function PortalHomePage() {
 
       {pending.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-zinc-900">Applications in flight</h2>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Applications in flight
+          </h2>
           <ul className="space-y-2">
             {pending.slice(0, 5).map((e) => (
               <li
@@ -124,7 +134,9 @@ export default async function PortalHomePage() {
                   {MODE_LABELS[e.mode as EngagementMode] || e.mode}
                 </span>
                 {e.scopeValue && (
-                  <span className="truncate font-mono text-xs text-zinc-500">{e.scopeValue}</span>
+                  <span className="truncate font-mono text-xs text-zinc-500">
+                    {e.scopeValue}
+                  </span>
                 )}
                 <span className="text-xs text-amber-800 sm:ml-auto">
                   {statusLabel(e.status)}
@@ -143,7 +155,9 @@ export default async function PortalHomePage() {
 
       {active.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-zinc-900">Active partnerships</h2>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Active partnerships
+          </h2>
           <ul className="space-y-2">
             {active.slice(0, 5).map((e) => (
               <li
@@ -154,7 +168,9 @@ export default async function PortalHomePage() {
                   {MODE_LABELS[e.mode as EngagementMode] || e.mode}
                 </span>
                 {e.scopeValue && (
-                  <span className="truncate font-mono text-xs text-zinc-500">{e.scopeValue}</span>
+                  <span className="truncate font-mono text-xs text-zinc-500">
+                    {e.scopeValue}
+                  </span>
                 )}
                 <span className="text-xs text-zinc-500 sm:ml-auto">
                   {statusLabel(e.status)}
@@ -165,19 +181,43 @@ export default async function PortalHomePage() {
         </section>
       )}
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white/60 p-4 sm:p-5">
-          <p className="text-sm font-medium text-zinc-800">Invitations</p>
-          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-            When partners invite you to a deal, they&apos;ll show up here.
-          </p>
-        </div>
-        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white/60 p-4 sm:p-5">
-          <p className="text-sm font-medium text-zinc-800">Contracts awaiting signature</p>
-          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-            Coming soon — agreements will land here when they&apos;re ready.
-          </p>
-        </div>
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-zinc-900">Keep moving</h2>
+        <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
+          <li>
+            <Link
+              href="/portal/discover"
+              className="flex min-h-[4.25rem] flex-col justify-center rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 transition hover:border-zinc-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:bg-zinc-50"
+            >
+              <p className="text-sm font-semibold text-zinc-900">Discover</p>
+              <p className="mt-0.5 text-xs leading-snug text-zinc-500">
+                Browse live partnership inventory
+              </p>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/portal/deals"
+              className="flex min-h-[4.25rem] flex-col justify-center rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 transition hover:border-zinc-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:bg-zinc-50"
+            >
+              <p className="text-sm font-semibold text-zinc-900">Deals</p>
+              <p className="mt-0.5 text-xs leading-snug text-zinc-500">
+                Track applications and follow-ups
+              </p>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/portal/placements"
+              className="flex min-h-[4.25rem] flex-col justify-center rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 transition hover:border-zinc-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:bg-zinc-50"
+            >
+              <p className="text-sm font-semibold text-zinc-900">Placements</p>
+              <p className="mt-0.5 text-xs leading-snug text-zinc-500">
+                Configure live checkout placements
+              </p>
+            </Link>
+          </li>
+        </ul>
       </section>
     </div>
   );
