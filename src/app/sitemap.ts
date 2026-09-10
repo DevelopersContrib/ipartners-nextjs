@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { getAllVerticalSlugs } from '@/lib/verticals';
 import { prisma } from '@/lib/db';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://ipartner.com';
+const BASE_URL = 'https://ipartner.com';
 
 /**
  * Hard cap for domain URLs in the sitemap.
