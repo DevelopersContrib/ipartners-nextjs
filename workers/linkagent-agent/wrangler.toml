@@ -1,0 +1,30 @@
+name = "linkagent-agent"
+main = "linkagent-agent.js"
+compatibility_date = "2025-09-01"
+
+[vars]
+ENGINE_URL = ""
+ENGINE_KEY = ""
+
+# Set secrets for production / staging:
+#   cd workers/linkagent-agent
+#   npx wrangler secret put ENGINE_URL
+#   npx wrangler secret put ENGINE_KEY
+#
+# Or configure via Cloudflare Dashboard:
+#   Workers & Pages → linkagent-agent → Settings → Variables
+#
+# ENGINE_URL = full origin of the campaign engine on A5, e.g. https://engine.linkagent.com
+# ENGINE_KEY = shared bearer token for engine auth
+
+[env.staging]
+name = "linkagent-agent-staging"
+[env.staging.vars]
+ENGINE_URL = ""
+ENGINE_KEY = ""
+
+[env.production]
+name = "linkagent-agent"
+[env.production.vars]
+ENGINE_URL = ""
+ENGINE_KEY = ""
