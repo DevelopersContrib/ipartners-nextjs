@@ -478,21 +478,21 @@ export default {
       });
     }
 
-    if (pathname === "/marketplace") {
+    if (pathname === "/marketplace" || pathname === "/marketplace/") {
       return new Response(MARKETPLACE_PAGE, {
         status: 200,
         headers: { "Content-Type": "text/html;charset=utf-8", "Cache-Control": "public, max-age=300" },
       });
     }
 
-    if (pathname === "/sponsor") {
+    if (pathname === "/sponsor" || pathname === "/sponsor/") {
       return new Response(SPONSOR_PAGE, {
         status: 200,
         headers: { "Content-Type": "text/html;charset=utf-8", "Cache-Control": "public, max-age=300" },
       });
     }
 
-    if (pathname === "/publisher") {
+    if (pathname === "/publisher" || pathname === "/publisher/") {
       return new Response(PUBLISHER_PAGE, {
         status: 200,
         headers: { "Content-Type": "text/html;charset=utf-8", "Cache-Control": "public, max-age=300" },
