@@ -61,6 +61,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: '/apps', priority: 0.7, changeFrequency: 'monthly' as const },
     { url: '/leaders', priority: 0.7, changeFrequency: 'monthly' as const },
     { url: '/product-service', priority: 0.7, changeFrequency: 'monthly' as const },
+    { url: '/marketplace', priority: 0.9, changeFrequency: 'weekly' as const },
+    { url: '/sponsor', priority: 0.8, changeFrequency: 'monthly' as const },
+    { url: '/publisher', priority: 0.8, changeFrequency: 'monthly' as const },
   ];
 
   const verticalPages = getAllVerticalSlugs().map((slug) => ({
